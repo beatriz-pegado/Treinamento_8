@@ -1,0 +1,71 @@
+﻿@model Treinamento8_0.Models.Menu
+@functions {
+    private string captionSistema = null;
+    private string captionModulo = null;
+    private string captionPagina = null;
+
+    private bool difSistema;
+    private bool difModulo;
+}
+@{
+    captionSistema = "";
+    captionModulo = "";
+    captionPagina = "";
+
+    difSistema = false;
+    difModulo = false;
+
+   var teste = Model.paginas;
+}
+<div class="container d-flex flex-wrap">
+    <nav>
+        <ul class="menu nav-menu nav-center">
+            <li class="parent">
+                <a href="~/AreaRestrita/">Início</a>
+            </li>
+            @if (Model.paginas != null)
+            {
+                @foreach (var item in Model.paginas)
+                {
+                    difSistema = item.CaptionSistema != captionSistema;
+                    difModulo = captionModulo != item.CaptionModulo;
+
+                    if (difModulo && captionModulo != "")
+                    {
+                        @Html.Raw("</ul>\n</li>")
+                    }
+
+                    if (difSistema && captionSistema != "")
+                    {
+                        @Html.Raw("</ul>\n</li>")
+                    }
+
+                    if (difSistema) { captionSistema = item.CaptionSistema; }
+                    if (difSistema)
+                    {
+                        @Html.Raw("\n<li class='parent'>")
+                        @Html.Raw("\n<a href = '#'>" + @item.CaptionSistema + "</a>")
+                        @Html.Raw("\n<ul class='child'>\n")
+                    }
+
+                    if (difModulo) { captionModulo = item.CaptionModulo; }
+                    if (difModulo)
+                    {
+                        @Html.Raw("\n<li class='parent'>")
+                        @Html.Raw("\n<a href='#'>" + @item.CaptionModulo + " <span class='expand'>»</span></a>")
+                        @Html.Raw("\n<ul class='child'>\n")
+                    }
+                    if (item.CaptionModulo == captionModulo && item.CaptionSistema == captionSistema)
+                    {
+                        <li><a href="~/AreaRestrita/@item.CodigoSistema/@item.CodigoModulo/@(item.CodigoPagina).cshtml">@item.CaptionPagina</a></li>
+                    }
+                }
+
+                @Html.Raw("</ul>\n</li>\n</ul>\n</li>")
+            }
+            <li class="parent">
+                <a href="~/ControleAcesso/Sair">Sair</a>
+            </li>
+        </ul>
+    </nav>
+</div>

@@ -1,0 +1,22 @@
+﻿@page
+@{
+    ViewData["Title"] = "Copa do Mundo";
+}
+
+@section head {
+    <link href="~/css/site.css" rel="stylesheet" />
+}
+<body>
+    @await Component.InvokeAsync("Menu")
+
+    <section class="section pb-0">
+        <div class="container">
+            <div class="row justify-content-between align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="mb-4">Copa do Mundo</h1>
+                    <p class="mb-4 text-muted">Esse ambiente foi desenvolvido fazer a conversão das páginas ASP para C# do Detran TO.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
