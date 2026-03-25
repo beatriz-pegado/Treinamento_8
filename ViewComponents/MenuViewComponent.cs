@@ -15,7 +15,7 @@ namespace Treinamento8_0.ViewComponents
             parametros.Add("@IdOperador", _identificacao.IdOperador);
 
             Dao dao = new Dao();
-            return dao.ExecutarProcedureList<Pagina>("stp_Pdc_MontaMenu", parametros);
+            return dao.ExecutarProcedureList<Pagina>("stp_ABP_MontaMenu", parametros);
         }
 
         public MenuViewComponent(IHttpContextAccessor accessor, IIdentificacao identificacao)

@@ -7,11 +7,10 @@ public class Identificacao : IIdentificacao
     private string _Pagina;
     private string _Modulo;
 
-    private readonly HttpContext _context;
+    private readonly HttpContext _context = new HttpContextAccessor().HttpContext;
 
-    public Identificacao(IHttpContextAccessor acessor)
+    public Identificacao()
     {
-        _context = acessor.HttpContext;
 
         _IdOperador = GetIdOperador();
 

@@ -1,0 +1,120 @@
+﻿@page
+@model Treinamento8_0.Pages.ControleAcesso.IndexModel
+
+@functions {
+    public class Operador
+    {
+        public string IdOperador { get; set; }
+        public string Nome { get; set; }
+        public string Tema { get; set; }
+    }
+
+    string acao = null;
+    string cpf = null;
+    string senha = null;
+    bool redirect = false;
+
+    private void AlimentaVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            acao = Util.ChecaNulo(Request.Form["acao"]);
+            cpf = Util.ChecaNulo(Request.Form["cpf"]);
+            senha = Util.ChecaNulo(Request.Form["senha"]);
+        }
+    }
+
+    private void Consultar()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@Cpf", cpf);
+        parametros.Add("@Senha", senha);
+
+        List<Operador> operadores = new Dao().ExecutarProcedureList<Operador>("stp_Pdc_AbreSessao", parametros);
+
+        if (operadores != null)
+        {
+            Operador operador = operadores.FirstOrDefault();
+            if (operador != null)
+            {
+                HttpContext.Session.SetString("IdOperador", operador.IdOperador);
+                // Session["tema"] = (operador.Tema == "0") ? "light" : "dark";
+                redirect = true;
+            }
+        }
+    }
+}
+
+@{
+    AlimentaVariaveis();
+
+    if (acao == "A")
+    {
+        try
+        {
+            Consultar();
+
+        }
+        catch (Exception e)
+        {
+            ModelState.AddModelError("alert-danger", e.Message);
+        }
+    }
+}
+
+@section head {
+    <link href="~/css/site.css" rel="stylesheet" />
+
+    @if (redirect)
+    {
+        <meta http-equiv="refresh" content="3;url=/">
+        <meta http-equiv="cache-control" content="no-cache">
+        <meta http-equiv="expires" content="0">
+    }
+}
+<body>
+    @if (redirect)
+    {
+        <div class="row justify-content-center mt-5">
+            <div class="col-sm-10 col-md-8 col-lg-6 col-xl-5 px-4">
+                <div class="text-center">
+                    <h4 class="text-success">Operação realizada com sucesso</h4>
+                    <p class="text-muted">Aguarde...</p>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="container-login">
+            <form name="form1" method="post">
+                <input type="hidden" name="acao" value="@acao" />
+                <div class="row">
+                    <div class="col">
+                        <label class="form-label" for="cpf">CPF</label>
+                        <input class="form-control" type="text" name="cpf" id="cpf" value="@cpf" />
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col">
+                        <label class="form-label" for="senha">Senha</label>
+                        <input class="form-control" type="password" name="senha" value="@senha" />
+                    </div>
+                </div>
+                <div class="row mt-3 justify-content-center">
+                    <div class="col-3">
+                        <button class="btn btn-primary" type="button" onclick="acessar()">Acessar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div asp-validation-summary="All" class="text-danger"></div>
+    }
+
+    <script>
+        function acessar() {
+            document.form1.acao.value = "A";
+            document.form1.submit();
+        }
+    </script>
+</body>

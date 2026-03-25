@@ -1,4 +1,7 @@
-﻿public static class Util
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+using System.Globalization;
+
+public static class Util
 {
     public static string ChecaNulo(string str)
     {
@@ -73,4 +76,74 @@
 
         return base64;
     }
+
+    public static void ExceptionHandler(Action action, ModelStateDictionary model)
+    {
+        try
+        {
+            action();
+        }
+        // Tratamento de erro criado na classe ErroExecucaoException
+        catch (ErroExecucaoException ex)
+        {
+            // Adiciona warning
+            model.AddModelError("alert-warning", "Por favor, verifique o formulário.");
+
+            // Adiciona erros por input
+            foreach (dynamic item in ex.Erros)
+            {
+                model.AddModelError(item.NomeInput, item.Mensagem);
+            }
+        }
+        catch (Exception ex)
+        {
+            model.AddModelError("alert-danger", ex.Message);
+        }
+    }
+
+
+    public static string IsInvalid(string key, ModelStateDictionary model)
+    {
+        // Verifica se o dicionário não é nulo e se o campo específico possui erros
+        if (model != null && model.GetFieldValidationState(key) == ModelValidationState.Invalid)
+        {
+            return "is-invalid";
+        }
+
+        return string.Empty;
+    }
+
+// Converte decimal para string e formata para duas casas decimais
+public static string ConverterMoeda(decimal valor, string culture)
+    {
+        return valor.ToString("N2", new CultureInfo(culture));
+    }
+
+    // Converte string para decimal
+    public static decimal ConverterMoeda(string valor)
+    {
+        return (ChecaNulo(valor) != null) ? Convert.ToDecimal(valor) : 0;
+
+    }
+
+    // Formata data e hora no formato dataThora
+    public static string FormatarDataHora(string data, string hora, int style)
+    {
+        if (data != null && hora != null)
+            return FormatarData(data, style) + "T" + hora;
+
+        return null;
+    }
+
+    public static string FormatarCPF(string cpf)
+    {
+        if (cpf != null && cpf.Length > 11)
+        {
+            cpf = cpf.Replace(".", "");
+            cpf = cpf.Replace("-", "");
+        }
+
+        return cpf;
+    }
 }
+

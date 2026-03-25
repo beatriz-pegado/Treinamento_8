@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Treinamento8_0.Interfaces;
+using Treinamento8_0.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,7 +35,8 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSession();
+app.UseMiddleware<SegurancaMiddleware>();
 app.MapRazorPages();
-//app.UseMiddleware<SegurancaMiddleware>();
 
 app.Run();
+

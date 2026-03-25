@@ -1,12 +1,21 @@
 ﻿@page
 @model Treinamento8_0.Pages.ControleAcesso.IndexModel
 
-@functions {
+@using Microsoft.AspNetCore.Http;
+
+@functions{
     public class Operador
     {
         public string IdOperador { get; set; }
         public string Nome { get; set; }
+        public string Theme { get; set; }
+    }
+    private class Sessao
+    {
+        public string IdSessao { get; set; }
+        public string IdOperador { get; set; }
         public string Tema { get; set; }
+
     }
 
     string acao = null;
@@ -14,7 +23,7 @@
     string senha = null;
     bool redirect = false;
 
-    private void AlimentaVariaveis()
+    private void AlimentarVariaveis()
     {
         if (HttpContext.Request.HasFormContentType)
         {
@@ -24,92 +33,114 @@
         }
     }
 
-    private void Consultar()
+    //private void Consultar()
+    //{
+    //    Dictionary<string, object> parametros = new Dictionary<string, object>();
+    //    parametros.Add("@Cpf", cpf);
+    //    parametros.Add("@Senha", senha);
+    //
+    //    List<Operador> operadores = new Dao().ExecutarProcedureList<Operador>("stp_ABP_AbreSessao", parametros);
+    //
+    //    if (operadores != null)
+    //    {
+    //        Operador operador = operadores.FirstOrDefault();
+    //        if (operador != null)
+    //        {
+    //            Session["IdOperador"] = operador.IdOperador;
+    //            Session["Tema"] = operador.Theme;
+    //            redirect = true;
+    //        }
+    //    }
+    //}
+
+    private void AbreSessao()
     {
+        string? origem = HttpContext.Connection.RemoteIpAddress?.ToString();
+
         Dictionary<string, object> parametros = new Dictionary<string, object>();
         parametros.Add("@Cpf", cpf);
         parametros.Add("@Senha", senha);
+        parametros.Add("@ViaIp", Util.ChecaNulo(origem));
 
-        List<Operador> operadores = new Dao().ExecutarProcedureList<Operador>("stp_Pdc_AbreSessao", parametros);
+        Dao dao = new Dao();
+        // Método passado nas aulas utilizado para executar procedures com retorno foi o ExecutarProcedureList. O ExecutarProcedure é utilizado apenas para ações que alterem o banco.
+        Sessao sessao = dao.ExecutarProcedureList<Sessao>("stp_ABP_AbreSessao", parametros).FirstOrDefault();
 
-        if (operadores != null)
+        if (sessao == null)
         {
-            Operador operador = operadores.FirstOrDefault();
-            if (operador != null)
-            {
-                HttpContext.Session.SetString("IdOperador", operador.IdOperador);
-                // Session["tema"] = (operador.Tema == "0") ? "light" : "dark";
-                redirect = true;
-            }
+            throw new Exception("Não foi possível abrir a sessão");
+        } else
+        {
+            HttpContext.Session.SetString("idSessao", sessao.IdSessao);
+            HttpContext.Session.SetString("IdOperador", sessao.IdOperador);
+            HttpContext.Session.SetString("Tema", sessao.IdOperador);
+            redirect = true;
         }
+
+
     }
 }
 
 @{
-    AlimentaVariaveis();
+    AlimentarVariaveis();
 
     if (acao == "A")
     {
-        try
+        Util.ExceptionHandler(() =>
         {
-            Consultar();
-
-        }
-        catch (Exception e)
-        {
-            ModelState.AddModelError("alert-danger", e.Message);
-        }
+            AbreSessao();
+            ModelState.AddModelError("alert-success", "Operação realizada com sucesso! Aguarde o redirecionamento.");
+        }, this.ModelState);
     }
 }
 
 @section head {
-    <link href="~/css/site.css" rel="stylesheet" />
-
     @if (redirect)
     {
-        <meta http-equiv="refresh" content="3;url=/">
-        <meta http-equiv="cache-control" content="no-cache">
-        <meta http-equiv="expires" content="0">
+        <meta http-equiv="refresh" content="3;url=/" />
     }
 }
-<body>
-    @if (redirect)
-    {
-        <div class="row justify-content-center mt-5">
-            <div class="col-sm-10 col-md-8 col-lg-6 col-xl-5 px-4">
-                <div class="text-center">
-                    <h4 class="text-success">Operação realizada com sucesso</h4>
-                    <p class="text-muted">Aguarde...</p>
+
+<body class="d-flex flex-column">
+    <form name="form1" method="post" class="min-vh-100 d-flex flex-column justify-content-center align-items-center bg-light">
+        <input type="hidden" name="acao" value="@acao" />
+
+
+        <div class="card shadow-sm border-0 p-4" style="max-width:450px; width:100%; border-radius: 12px;">
+            <div class="mb-3 mx-4">
+                <label for="cpf" class="form-label fw-semibold small text-secondary">CPF</label>
+                <input id="cpf"
+                       class="form-control cpf"
+                       type="text"
+                       name="cpf"
+                       placeholder="000.000.000-00"
+                       value="@cpf" />
+            </div>
+
+            <div class="mb-4 mx-4">
+                <label for="senha" class="form-label fw-semibold small text-secondary">Senha</label>
+                <div class="input-group">
+                    <input id="senha"
+                           class="form-control"
+                           type="password"
+                           name="senha"
+                           placeholder="Senha" />
                 </div>
             </div>
+
+            <div class="d-grid gap-2 mx-4">
+                <button class="btn btn-primary py-2 fw-bold" onclick="acessar()">
+                    Acessar Sistema
+                </button>
+            </div>
+
+            <div class="text-center my-4 mx-4">
+                <a href="#" class="text-decoration-none small">Esqueceu a senha?</a>
+            </div>
         </div>
-    }
-    else
-    {
-        <div class="container-login">
-            <form name="form1" method="post">
-                <input type="hidden" name="acao" value="@acao" />
-                <div class="row">
-                    <div class="col">
-                        <label class="form-label" for="cpf">CPF</label>
-                        <input class="form-control" type="text" name="cpf" id="cpf" value="@cpf" />
-                    </div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col">
-                        <label class="form-label" for="senha">Senha</label>
-                        <input class="form-control" type="password" name="senha" value="@senha" />
-                    </div>
-                </div>
-                <div class="row mt-3 justify-content-center">
-                    <div class="col-3">
-                        <button class="btn btn-primary" type="button" onclick="acessar()">Acessar</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-        <div asp-validation-summary="All" class="text-danger"></div>
-    }
+
+    </form>
+    <div asp-validation-summary="All" class="text-danger"></div>
 
     <script>
         function acessar() {

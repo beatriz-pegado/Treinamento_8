@@ -1,0 +1,284 @@
+@* 
+    Substituído pelo SegurancaMiddleware.cs    
+    @RenderPage("~/AreaRestrita/Seguranca.cshtml") 
+*@
+@page
+@model Treinamento8_0.Pages.AreaRestrita.Administrativo.Cadastro.SistemaModel
+@using Microsoft.AspNetCore.Http;
+
+@{
+    // Page.Title = "Sistema";
+    ViewData["Title"] = "Sistema";
+    Layout = "/Pages/AreaRestrita/_Layout.cshtml";
+}
+
+@functions {
+
+    private enum View
+    {
+        Index,
+        New,
+        Edit
+    }
+
+    public class Sistema
+    {
+        public string IdSistema { get; set; }
+        public string Codigo { get; set; }
+        public string Caption { get; set; }
+    }
+
+    string acao = null;
+    string idSistema = null;
+    Sistema sistema = null;
+    View view = View.Index;
+    List<Sistema> sistemas = null;
+    List<Botao> botoes = null;
+
+    private void AlimentaVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            acao = Util.ChecaNulo(Request.Form["acao"]);
+            idSistema = Util.ChecaNulo(Request.Form["idSistema"]);
+
+            if (!string.IsNullOrWhiteSpace(Request.Form["view"]))
+            {
+                view = (View)Enum.Parse(typeof(View), Request.Form["view"]);
+            }
+        }
+        botoes = new BotaoDao().GetAll();
+    }
+
+    private void LimpaVariaveis()
+    {
+        acao = null;
+        idSistema = null;
+        sistema = null;
+    }
+
+    private void Consultar()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdSistema", idSistema);
+
+        sistemas = new Dao().ExecutarAcaoList<Sistema>("C", parametros);
+    }
+
+    private void Manutencao()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdSistema", sistema.IdSistema);
+        parametros.Add("@Codigo", sistema.Codigo);
+        parametros.Add("@Caption", sistema.Caption);
+
+        new Dao().ExecutarAcao(acao, parametros);
+    }
+
+    private void CarregarDados()
+    {
+        if (view == View.Edit && acao == "C" && sistemas != null && sistemas.Count == 1)
+        {
+            sistema = sistemas.FirstOrDefault();
+        }
+    }
+}
+@{
+    AlimentaVariaveis();
+
+    if (acao == "I" || acao == "A" || acao == "E")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            if (HttpContext.Request.HasFormContentType)
+            {
+                sistema = new Sistema()
+                {
+
+                    IdSistema = Util.ChecaNulo(Request.Form["idSistema"]),
+                    Codigo = Util.ChecaNulo(Request.Form["codigo"]),
+                    Caption = Util.ChecaNulo(Request.Form["caption"])
+                };
+            }
+            Manutencao();
+            view = View.Index;
+            LimpaVariaveis();
+            ModelState.AddModelError("alert-success", "Operação realizada com sucesso.");
+        }, this.ModelState);
+    }
+
+    Util.ExceptionHandler(() =>
+    {
+        Consultar();
+        CarregarDados();
+
+    }, this.ModelState);
+
+    if (sistema == null)
+    {
+        sistema = new Sistema();
+    }
+}
+@section head {
+    <link href="~/Scripts/Style.css" rel="stylesheet">
+    <link href="~/css/site.css" rel="stylesheet" />
+}
+
+<body>
+    <form name="form1" method="post">
+        <input type="hidden" name="acao" id="acao" />
+        <input type="hidden" name="idSistema" id="idSistema" value="@idSistema" />
+        <input type="hidden" name="view" id="view" value="@((int)view)" />
+
+        @*@RenderPage("~/AreaRestrita/Menu.cshtml")*@
+        @await Component.InvokeAsync("Menu")
+
+        <div class="container mt-5 pt-5">
+            <div class="d-flex flex-column gap-2 mb-5">
+                <div class="d-flex justify-content-between my-3">
+                    <p class="h1">Sistemas</p>
+
+                    <div class="d-flex align-items-center ms-auto gap-2">
+
+                        <!--botao azul  class="btn btn-sm btn-primary"-->
+                        @if (view == View.Index)
+                        {
+                            if (botoes.Any(x => x.Codigo == "I"))
+                            {
+                                <button class="btn btn-outline-primary" type="button" onclick="novo()">Novo</button>
+                            }
+
+                        }
+                        @if (view == View.New)
+                        {
+                            //@PageHelper.MakeBotao(botoes, "I")
+                            <make-botao lista="botoes" acao="I"></make-botao>
+                        }
+
+
+                        @if (view == View.Edit)
+                        {
+                            //@PageHelper.MakeBotao(botoes, "A")
+                            //@PageHelper.MakeBotao(botoes, "E")
+                            <make-botao lista="botoes" acao="A"></make-botao>
+                            <make-botao lista="botoes" acao="E"></make-botao>
+                        }
+
+                        <button class="btn btn-outline-primary" type="submit" onclick="estadoInicial()">Limpar</button>
+                    </div>
+                </div>
+
+                @*  <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
+                    @PageHelper.MakeAlert()
+                </div> *@
+                <make-alert />
+
+                @if (view == View.New || view == View.Edit)
+                {
+                    <div class="input-group mb-3">
+                        <label class="input-group-text is-invalid">Codigo do Sistema: </label>
+                        <input class="form-control @Util.IsInvalid("codigo", this.ModelState)" type="text" name="codigo" id="codigo" value="@sistema.Codigo" />
+                        @* @PageHelper.MakeFeedback("codigo") *@
+                        <make-feedback for-key="codigo" />
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <label class="input-group-text is-invalid">Caption do Sistema: </label>
+                        <input class="form-control @Util.IsInvalid("caption", this.ModelState)" type="text" name="caption" id="caption" value="@sistema.Caption" />
+                        @* @PageHelper.MakeFeedback("caption") *@
+                        <make-feedback for-key="caption"/>
+                    </div>
+                }
+
+            </div>
+
+            @if (view == View.Index)
+            {
+                <div class="table-wrapper table-responsive">
+                    <table class="table table-striped table-hover table-borderless table-scroll">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Codigo</th>
+                                <th>Caption</th>
+                                @if (botoes.Any(x => x.Codigo == "A" || x.Codigo == "E"))
+                                {
+                                    <th></th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (Sistema sistema in sistemas)
+                            {
+                                <tr>
+                                    <td>@sistema.IdSistema</td>
+                                    <td>@sistema.Codigo</td>
+                                    <td>@sistema.Caption</td>
+                                    @if (botoes.Any(x => x.Codigo == "A" || x.Codigo == "E"))
+                                    {
+                                        <td><button class="btn btn-sm btn-primary js-setId" data-id="@sistema.IdSistema">Editar</button></td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+        </div>
+    </form>
+
+    <script src="~/Scripts/Scripts.js"></script>
+
+    <script>
+        function executarAcao(acao) {
+            document.form1.acao.value = acao;
+            document.form1.submit();
+        }
+
+        // Limpa todos os inputs da tela
+        function estadoInicial() {
+            var elements = document.querySelectorAll('input, select');
+            if (elements) {
+                elements.forEach(function (item) {
+                    if (item.name.startsWith("__") || item.type === 'submit') return;
+                    var type = item.type;
+                    var tag = item.tagName.toLowerCase();
+
+                    if (type == 'text' || type == 'hidden' || type == 'password' || type == 'textarea') {
+                        item.value = '';
+                    } else if (type == 'checkbox' || type == 'radio') {
+                        item.checked = false;
+                    } else if (tag == 'select') {
+                        item.selectedIndex = -1;
+                    }
+                });
+            }
+        }
+
+        function setId(idSistema) {
+            document.form1.view.value = "@((int)View.Edit)";
+            document.form1.idSistema.value = idSistema;
+            executarAcao('C');
+        }
+
+        function novo() {
+            document.form1.view.value = "@((int)View.New)";
+            executarAcao('');
+        }
+
+        function adicionaEventos() {
+            Array.from(document.querySelectorAll('.js-setId')).forEach(function (item) {
+                item.addEventListener("click", function () {
+                    var id = this.getAttribute("data-id");
+                    setId(id);
+                });
+            });
+        }
+
+        adicionaEventos();
+    </script>
+
+</body>
+
+
