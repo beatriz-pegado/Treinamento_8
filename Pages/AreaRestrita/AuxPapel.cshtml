@@ -1,0 +1,85 @@
+﻿@page
+@functions {
+    private class Papel
+    {
+        public string IdPapel { get; set; }
+        public string Nome { get; set; }
+    }
+
+    public class Quantidade
+    {
+        public string TotalRegistros { get; set; }
+    }
+
+    List<Papel> papeis = new List<Papel>();
+    Exception exception = null;
+    string pesquisa = null;
+    List<Botao> botoes = null;
+
+    private void AlimentarVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+        pesquisa = Util.ChecaNulo(Request.Form["pesquisa"]);
+    
+        }
+    }
+
+    private void Consultar()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 0);
+        parametros.Add("@Pesquisa", pesquisa);
+
+        papeis = new Dao().ExecutarProcedureList<Papel>("stp_ABP_PaginacaoPapel_Sel", parametros);
+    }
+
+}
+
+@{
+    try
+    {
+        AlimentarVariaveis();
+        Consultar();
+    }
+    catch (Exception ex)
+    {
+        exception = ex;
+    }
+}
+
+@if (exception != null)
+{
+    <div class="alert alert-warning">@exception.Message</div>
+}
+else
+{
+    if (papeis != null && papeis.Count > 0)
+    {
+        <div class="table-wrapper table-responsive m-2">
+            <table class="table table-striped table-hover table-borderless table-scroll">
+                <thead>
+                    <tr>
+                        <th>idPapel</th>
+                        <th>Nome</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (Papel item in papeis)
+                    {
+                        <tr>
+                            <td>@item.IdPapel</td>
+                            <td>@item.Nome</td>
+                            <td><button class="btn btn-sm btn-primary js-setId" data-id="@item.IdPapel">Editar</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-light">Nenhum registro encontrado.</div>
+    }
+}

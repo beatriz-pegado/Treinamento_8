@@ -1,0 +1,303 @@
+﻿@page
+
+@{
+    ViewData["Title"] = "Autorização";
+}
+
+@functions {
+
+    private enum View
+    {
+        Index,
+        Edit
+    }
+
+    public class Autorizacao
+    {
+        public string IdAutorizacao { get; set; }
+        public string IdAcao { get; set; }
+        public string NomeSistema { get; set; }
+        public string NomeModulo { get; set; }
+        public string NomePagina { get; set; }
+        public string NomeAcao { get; set; }
+    }
+
+    public class Operador
+    {
+        public string IdOperador { get; set; }
+        public string Nome { get; set; }
+    }
+
+    string acao = null;
+    string idOperador = null;
+    string acoes = null;
+    View view = View.Index;
+    List<Autorizacao> autorizacoes = null;
+    List<Operador> operadores = null;
+    List<Botao> botoes = null;
+
+    private void AlimentaVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            acao = Util.ChecaNulo(Request.Form["acao"]);
+            idOperador = Util.ChecaNulo(Request.Form["idOperador"]);
+
+            acoes = Util.ChecaNulo(Request.Form["idAcao"]);
+        }
+        if (!string.IsNullOrWhiteSpace(Request.Form["view"]))
+        {
+            view = (View)Enum.Parse(typeof(View), Request.Form["view"]);
+        }
+        botoes = new BotaoDao().GetAll();
+    }
+
+    private void LimpaVariaveis()
+    {
+        acao = null;
+        idOperador = null;
+        acoes = null;
+    }
+
+    private void ConsultarAutorizacoes()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 1);
+        parametros.Add("@IdOperador", idOperador);
+
+        autorizacoes = new Dao().ExecutarAcaoList<Autorizacao>("C", parametros);
+    }
+
+    private void ConsultarOperadores()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 2);
+
+        operadores = new Dao().ExecutarAcaoList<Operador>("C", parametros);
+    }
+
+    private void Manutencao()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdOperador", idOperador);
+        parametros.Add("@Acoes", acoes);
+
+        new Dao().ExecutarAcao(acao, parametros);
+    }
+}
+@{
+    AlimentaVariaveis();
+
+    if (acao == "A")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            Manutencao();
+            view = View.Index;
+            LimpaVariaveis();
+            ModelState.AddModelError("alert-success", "Operação realizada com sucesso.");
+        }, this.ModelState);
+    }
+
+    Util.ExceptionHandler(() =>
+    {
+        ConsultarAutorizacoes();
+        ConsultarOperadores();
+
+    }, this.ModelState);
+}
+
+<body>
+    <form name="form1" method="post">
+
+        <input type="hidden" name="acao" id="acao" />
+        <input type="hidden" name="idAutorizacao" id="idAutorizacao" value="@idOperador" />
+        <input type="hidden" name="view" id="view" value="@((int)view)" />
+
+        @*@RenderPage("~/AreaRestrita/Menu.cshtml")*@
+
+    <div class="container mt-5 pt-5">
+        <div class="d-flex justify-content-between mt-3 mb-5">
+            <p class="h1">Autorização</p>
+
+            <div class="d-flex align-items-center ms-auto gap-2">
+                @if (view == View.Edit)
+                {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "A" })
+                }
+
+                <button class="btn btn-outline-primary" type="submit" onclick="estadoInicial()">Limpar</button>
+            </div>
+        </div>
+
+        <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
+                @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+        </div>
+
+        <div class="mb-5">
+            @if (view == View.Index || view == View.Edit)
+            {
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="Operador">Operador: </label>
+                    <select class="form-select @Util.IsInvalid("idOperador", this.ModelState)" name="idOperador" onchange="editar()">
+                        <option value="">Selecione um Operador</option>
+                        @if (operadores != null)
+                        {
+                            foreach (Operador item in operadores)
+                            {
+                                <!option @(item.IdOperador == idOperador ? "selected" : "") value="@item.IdOperador">
+                                    @item.Nome
+                                </!option>
+                            }
+                        }
+                    </select>
+                        @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "idTime")
+                </div>
+            }
+        </div>
+
+
+        @if (autorizacoes != null)
+        {
+            string idSistema = null;
+            string idModulo = null;
+            string idPagina = null;
+
+            <div class="shadow-sm border rounded">
+                @foreach (Autorizacao item in autorizacoes)
+                {
+                    var sistemaId = item.NomeSistema.Replace(" ", "");
+                    var moduloId = sistemaId + item.NomeModulo.Replace(" ", "");
+                    var paginaId = moduloId + item.NomePagina.Replace(" ", "");
+
+                    if (idSistema != item.NomeSistema && idSistema != null)
+                {
+                    @Html.Raw("</div></div></div>")
+                        idModulo = null;
+                    idPagina = null;
+                }
+
+                    if (idSistema != item.NomeSistema)
+                    {
+                        @Html.Raw($@"
+                            </div>
+                            <div class='card border-0 rounded-0'>
+                                <div class='card-header bg-light-subtle d-flex align-items-center'
+                                     data-bs-toggle='collapse' data-bs-target='#sistema_{sistemaId}'
+                                     style='cursor:pointer; height: 50px;'>
+                                        <strong>{item.NomeSistema}</strong>
+                                </div>
+                                <div id='sistema_{sistemaId}' class='collapse'>
+                        ")
+                    }
+
+                    if (idModulo != item.NomeModulo && idModulo != null)
+                    {
+                        @Html.Raw("</div></div></div>")
+                        idPagina = null;
+                    }
+
+                    if (idModulo != item.NomeModulo)
+                    {
+                        @Html.Raw($@"
+                            <div class='border-bottom'>
+                                <div class='bg-secondary bg-opacity-10 px-4 py-2 d-flex justify-content-between align-items-center'
+                                     data-bs-toggle='collapse' data-bs-target='#modulo_{moduloId}'
+                                     style='cursor:pointer'>
+                                    <span class='text-secondary small fw-bold text-uppercase'>{item.NomeModulo}</span>
+                                    <i class='bi bi-chevron-down small text-secondary'></i>
+                                </div>
+                                <div id='modulo_{moduloId}' class='collapse'>
+                        ")
+                    }
+
+
+                    if (idPagina != item.NomePagina && idPagina != null)
+                    {
+                        @Html.Raw("</div>")
+                    }
+
+                    if (idPagina != item.NomePagina)
+                    {
+                        @Html.Raw($@"
+                            <div class='px-5 py-2 border-bottom'
+                                 data-bs-toggle='collapse' data-bs-target='#pagina_{paginaId}'
+                                 style='cursor:pointer'>
+                                <span class='text-primary fw-semibold'><i class='bi bi-file-earmark-text me-1'></i> {item.NomePagina}</span>
+                            </div>
+                            <div id='pagina_{paginaId}' class='collapse px-5 py-2'>
+                        ")
+                    }
+
+                    <div class="row align-items-center py-2 border-bottom">
+                        <div class="col-9 text-muted small">
+                            @item.NomeAcao
+                        </div>
+                        <div class="col-3 text-end">
+                            <div class="form-check form-switch d-inline-block">
+                                <input class="form-check-input" type="checkbox" name="idAcao" value="@item.IdAcao" @(item.IdAutorizacao != null ? "checked" : "")>
+                            </div>
+                        </div>
+                    </div>
+
+                    idSistema = item.NomeSistema;
+                    idModulo = item.NomeModulo;
+                    idPagina = item.NomePagina;
+                }
+
+                @Html.Raw("</div></div></div>")
+            </div>
+        }
+
+
+
+
+
+        @*@if (view == View.Edit && autorizacoes != null)
+        {
+            <div class="table-wrapper table-responsive">
+                <table class="table table-striped table-hover table-borderless table-scroll">
+                    <thead>
+                        <tr>
+                            <th>Sistema</th>
+                            <th>Módulo</th>
+                            <th>Página</th>
+                            <th>Ação</th>
+                            @if (botoes.Any(x => x.Codigo == "A" || x.Codigo == "E"))
+                            {
+                                <th>Permitir Ação</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (Autorizacao item in autorizacoes)
+                        {
+                            <tr>
+                                <td>@item.NomeSistema</td>
+                                <td>@item.NomeModulo</td>
+                                <td>@item.NomePagina</td>
+                                <td>@item.NomeAcao</td>
+                                @if (botoes.Any(x => x.Codigo == "A" || x.Codigo == "E"))
+                                {
+                                    <td><input type="checkbox" name="idAcao" value="@item.IdAcao" @(item.IdAutorizacao != null ? "checked" : "")></td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+        }*@
+    </div>
+    </form>
+
+    <script>
+        function editar() {
+            document.form1.view.value = "@((int)View.Edit)";
+            executarAcao('C');
+        }
+    </script>
+
+</body>
+
+

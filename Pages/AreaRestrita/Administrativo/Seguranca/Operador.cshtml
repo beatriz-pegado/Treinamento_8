@@ -1,0 +1,449 @@
+﻿@page
+
+@{
+    ViewData["Title"] = "Operador";
+}
+
+@using System.Net.Http;
+@using System.Threading.Tasks;
+@using System.Text.Json;
+@using System.Linq;
+
+@functions {
+
+    private enum View
+    {
+        Index,
+        New,
+        Edit
+    }
+
+    public enum Status
+    {
+        Inativo,
+        Ativo
+    }
+
+    public class Operador
+    {
+        public string IdOperador { get; set; }
+        public string Cpf { get; set; }
+        public string Nome { get; set; }
+        public string Senha { get; set; }
+        public string DataInicio { get; set; }
+        public Status Status { get; set; }
+        public string IdPapel { get; set; }
+        public string NomePapel { get; set; }
+    }
+
+    public class Papel
+    {
+        public string IdPapel { get; set; }
+        public string Nome { get; set; }
+    }
+
+    private static Random random = new Random();
+    string acao = null;
+    string tipoConsulta = null;
+    string idOperador = null;
+    string idPapel = null;
+    Operador operador = null;
+    View view = View.Index;
+    List<Operador> operadores = null;
+    List<Papel> papeisSelecionados = new List<Papel>();
+    List<Botao> botoes = null;
+    string senha = "";
+
+    public void GerarSenha(int tamanho = 12)
+    {
+        const string maiusculas = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const string minusculas = "abcdefghijklmnopqrstuvwxyz";
+        const string numeros = "0123456789";
+        const string especiais = "!@#$%&*?";
+        const string todos = maiusculas + minusculas + numeros + especiais;
+
+        if (tamanho < 4)
+            throw new Exception("Senha precisa ter pelo menos 4 caracteres.");
+
+        List<char> senhaChar = new List<char>
+{
+            maiusculas[random.Next(maiusculas.Length)],
+            minusculas[random.Next(minusculas.Length)],
+            numeros[random.Next(numeros.Length)],
+            especiais[random.Next(especiais.Length)]
+        };
+
+        for (int i = senhaChar.Count; i < tamanho; i++)
+            senhaChar.Add(todos[random.Next(todos.Length)]);
+
+        senhaChar = senhaChar.OrderBy(x => random.Next()).ToList();
+
+        senha = new string(senhaChar.ToArray());
+    }
+
+    private void AlimentaVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            acao = Util.ChecaNulo(Request.Form["acao"]);
+            idOperador = Util.ChecaNulo(Request.Form["idOperador"]);
+            idPapel = Util.ChecaNulo(Request.Form["idPapel"]);
+
+            if (!string.IsNullOrWhiteSpace(Request.Form["view"]))
+            {
+                view = (View)Enum.Parse(typeof(View), Request.Form["view"]);
+            }
+        }
+        botoes = new BotaoDao().GetAll();
+    }
+
+    private void LimpaVariaveis()
+    {
+        acao = null;
+        idOperador = null;
+        operador = null;
+    }
+
+    private void ConsultarOperadores()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdOperador", idOperador);
+
+        operadores = new Dao().ExecutarAcaoList<Operador>("C", parametros);
+    }
+
+    private List<Papel> ConsultarAutocomplete(string termo)
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@Nome", termo);
+
+        return new Dao().ExecutarProcedureList<Papel>("stp_ABP_Papel_Autocomplete", parametros);
+    }
+
+    private void Manutencao()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdOperador", operador.IdOperador);
+        parametros.Add("@Cpf", Util.FormatarCPF(operador.Cpf));
+        parametros.Add("@Nome", operador.Nome);
+        parametros.Add("@Senha", operador.Senha);
+        parametros.Add("@DataInicio", operador.DataInicio);
+        parametros.Add("@Status", operador.Status);
+        parametros.Add("@IdPapel", operador.IdPapel);
+
+        new Dao().ExecutarAcao(acao, parametros);
+    }
+
+    private void CarregarDados()
+    {
+        if (view == View.Edit && acao == "C" && operadores != null && operadores.Count() == 1)
+        {
+            operador = operadores.FirstOrDefault();
+            operador.DataInicio = Util.FormatarData(operador.DataInicio, 23) + "T" + Util.FormatarData(operador.DataInicio, 108);
+        }
+    }
+
+}
+
+@{
+    AlimentaVariaveis();
+
+    if (acao == "BP")
+    {
+        string termo = Util.ChecaNulo(Request.Form["termo"]);
+        List<Papel> papeis = ConsultarAutocomplete(termo);
+
+        var listaParaJson = papeis?.Select(p => new
+        {
+            label = p.Nome,
+            value = p.Nome,
+            id = p.IdPapel
+        }) ?? Enumerable.Empty<object>();
+
+        Response.Clear(); 
+        Response.ContentType = "application/json";
+
+        string json = JsonSerializer.Serialize(listaParaJson);
+        await Response.WriteAsync(json);
+
+        await Response.CompleteAsync(); 
+        return;
+    }
+
+    if (acao == "GS")
+    {
+        GerarSenha();
+        await Response.WriteAsync(senha);
+        return;
+    }
+
+    if (acao == "I" || acao == "A" || acao == "E")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            operador = new Operador()
+            {
+                IdOperador = Util.ChecaNulo(Request.Form["idOperador"]),
+                Cpf = Util.ChecaNulo(Request.Form["cpf"]),
+                Nome = Util.ChecaNulo(Request.Form["nome"]),
+                Senha = Util.ChecaNulo(Request.Form["senha"]),
+                Status = (Status)Enum.Parse(typeof(Status), Request.Form["status"]),
+                DataInicio = Util.ChecaNulo(Request.Form["dataInicio"]),
+                IdPapel = Util.ChecaNulo(Request.Form["idPapel"])
+            };
+            Manutencao();
+            view = View.Index;
+            LimpaVariaveis();
+            ModelState.AddModelError("alert-success", "Operação realizada com sucesso.");
+        }, this.ModelState);
+    }
+
+    Util.ExceptionHandler(() =>
+    {
+        ConsultarOperadores();
+        CarregarDados();
+    }, this.ModelState);
+
+    if (operador == null)
+    {
+        operador = new Operador();
+    }
+}
+
+<body>
+    <form name="form1" method="post">
+        <input type="hidden" name="acao" id="acao" />
+        <input type="hidden" name="idOperador" id="idOperador" value="@idOperador" />
+        <input type="hidden" name="view" id="view" value="@((int)view)" />
+
+        @Html.AntiForgeryToken()
+
+        <div class="container mt-5 pt-5">
+            <div class="d-flex justify-content-between mt-3 mb-5">
+                <p class="h1">Operador</p>
+                <div class="d-flex align-items-center ms-auto gap-2">
+                    @if (view == View.Index && botoes.Any(x => x.Codigo == "I"))
+                    {
+                        <button class="btn btn-outline-primary" type="button" onclick="novo()">Novo</button>
+                    }
+
+                    @if (view == View.New)
+                    {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "I" })
+                    }
+
+                    @if (view == View.Edit)
+                    {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "A" })
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "E" })
+                    }
+                    <button class="btn btn-outline-primary" type="submit" onclick="estadoInicial()">Limpar</button>
+                </div>
+            </div>
+
+            <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
+                @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+            </div>
+
+            @if (view == View.New || view == View.Edit)
+            {
+                <div class="card mb-5">
+                    <div class="card-header">Informações Pessoais</div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <label class="input-group-text is-invalid">Cpf: </label>
+                            <input class="form-control @Util.IsInvalid("cpf", this.ModelState)" type="text" name="cpf" id="cpf" value="@operador.Cpf" />
+                            @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "cpf")
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <label class="input-group-text is-invalid">Nome: </label>
+                            <input class="form-control @Util.IsInvalid("nome", this.ModelState)" type="text" name="nome" id="nome" value="@operador.Nome" />
+                            @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "nome")
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <label class="input-group-text is-invalid" for="senha">Senha: </label>
+                            <input class="form-control @Util.IsInvalid("senha", this.ModelState)" type="text" name="senha" id="senha" value="@operador.Senha" />
+                            <button class="btn btn-outline-primary" type="button" onclick="gerarSenha()">Gerar Senha</button>
+                            @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "senha")
+                        </div>
+                    </div>
+                </div>
+                <div class="card mb-5">
+                    <div class="card-header">Configurações da Conta</div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <label class="input-group-text" for="dataInicio">Data de início</label>
+                            <input type="datetime-local" class="form-control @Util.IsInvalid("dataInicio", this.ModelState)" name="dataInicio" value="@operador.DataInicio" />
+                            @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "dataInicio")
+                        </div>
+
+                        <div class="d-flex gap-3 align-items-center m-3">
+                            <p class="mb-0">Status:</p>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="statusAtivo" name="status" value="@(Status.Ativo)" @(operador.Status == Status.Ativo ? "checked" : "")>
+                                <label class="form-check-label" for="statusAtivo">Ativo</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="statusInativo" name="status" value="@(Status.Inativo)" @(operador.Status == Status.Inativo ? "checked" : "")>
+                                <label class="form-check-label" for="statusInativo">Inativo</label>
+                            </div>
+                        </div>
+
+
+                        <div class="input-group mb-3">
+                            <label class="input-group-text is-invalid">Papel: </label>
+                            <input class="form-control rounded @Util.IsInvalid("papel", this.ModelState)" type="text" name="papel" id="papel" value="@operador.NomePapel" />
+                            @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "papel")
+                            <input type="hidden" name="idPapel" id="idPapel" value="@operador.IdPapel" />
+                        </div>
+                    </div>
+                </div>
+
+
+
+                @*<p class="h3 my-5">Modelo CEP</p>
+
+                    <div class="input-group mb-3">
+                        <label class="input-group-text is-invalid" for="cep">CEP: </label>
+                        <input class="form-control" type="text" name="cep" id="cep" />
+                        <button type="button" class="btn btn-outline-primary" name="cepButton" onclick="buscarCep()">Buscar</button>
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <label class="input-group-text is-invalid" for="estado">Estado: </label>
+                        <input class="form-control @Util.IsInvalid("estado", this.ModelState)" type="text" name="estado" id="estado" value="" />
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <label class="input-group-text is-invalid" for="cidade">Cidade: </label>
+                        <input class="form-control @Util.IsInvalid("cidade", this.ModelState)" type="text" name="cidade" id="cidade" value="" />
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <label class="input-group-text is-invalid" for="bairro">Bairro: </label>
+                        <input class="form-control @Util.IsInvalid("bairro", this.ModelState)" type="text" name="bairro" id="bairro" value="" />
+                    </div>*@
+            }
+
+            @if (view == View.Index && operadores != null)
+            {
+                <div class="table-wrapper table-responsive">
+                    <table class="table table-striped table-hover table-borderless table-scroll">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Cpf</th>
+                                <th>Nome</th>
+                                <th>Senha</th>
+                                <th>Data de Início</th>
+                                <th>Status</th>
+                                <th>Papel</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (Operador item in operadores)
+                            {
+                                <tr>
+                                    <td>@item.IdOperador</td>
+                                    <td>@item.Cpf</td>
+                                    <td>@item.Nome</td>
+                                    <td>@item.Senha</td>
+                                    <td>@item.DataInicio</td>
+                                    <td>@(item.Status == Status.Ativo ? "Ativo" : "Inativo")</td>
+                                    <td>@item.NomePapel</td>
+                                    <td><button class="btn btn-sm btn-primary js-setId" data-id="@item.IdOperador">Editar</button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </form>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
+
+    <script src="~/Scripts/Scripts.js"></script>
+
+    <script>
+        function setId(idOperador) {
+            document.form1.view.value = "@((int)View.Edit)";
+            document.form1.idOperador.value = idOperador;
+            executarAcao('C');
+        }
+
+        function novo() {
+            document.form1.view.value = "@((int)View.New)";
+            executarAcao('');
+        }
+
+        function adicionaEventos() {
+            Array.from(document.querySelectorAll('.js-setId')).forEach(function (item) {
+                item.addEventListener("click", function () {
+                    var id = this.getAttribute("data-id");
+                    setId(id);
+                });
+            });
+
+            $("#papel").autocomplete({
+                minLength: 2,
+                source: function (request, response) {
+                    $.ajax({
+                        method: "POST",
+                        url: "Operador",
+                        headers: {
+                            "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
+                        },
+                        data: { acao: "BP", termo: request.term },
+                        dataType: "json"
+                    }).done(function (data) {
+                        response(data);
+                    }).fail(function () {
+                        response([]);
+                    });
+                },
+                select: function (event, ui) {
+                    $("#idPapel").val(ui.item.id);
+                }
+            });
+        }
+
+        function gerarSenha() {
+            $.ajax({
+                method: "POST",
+                url: "Operador",
+                headers: {
+                    "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
+                },
+                data: { acao: "GS" }
+            }).done(function (res) {
+                    document.form1.senha.value = res
+                });
+        }
+
+        function buscarCep() {
+            var cep = document.getElementById("cep").value;
+
+            $.ajax({
+                method: "GET",
+                url: `https://viacep.com.br/ws/${cep}/json`,
+                datatype: 'JSON'
+            }).done(function (res) {
+                document.getElementById("estado").value = res.uf || "";
+                document.getElementById("cidade").value = res.localidade || "";
+                document.getElementById("bairro").value = res.bairro || "";
+            });
+        }
+
+        adicionaEventos();
+    </script>
+
+</body>
+
+
