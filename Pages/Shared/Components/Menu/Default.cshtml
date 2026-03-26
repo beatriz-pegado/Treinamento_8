@@ -1,71 +1,252 @@
 ﻿@model Treinamento8_0.Models.Menu
-@functions {
-    private string captionSistema = null;
-    private string captionModulo = null;
-    private string captionPagina = null;
+@functions{
+    private class Pagina
+    {
+        public string CodigoSistema { get; set; }
+        public string CaptionSistema { get; set; }
+        public string CodigoModulo { get; set; }
+        public string CaptionModulo { get; set; }
+        public string CodigoPagina { get; set; }
+        public string CaptionPagina { get; set; }
+        public int Status { get; set; }
+    }
 
-    private bool difSistema;
-    private bool difModulo;
+    List<Pagina> paginas = null;
+
+    string acao = null;
+    string sistemaAnterior = null;
+    string moduloAnterior = null;
+
+    private void ConsultarMenu()
+    {
+        Identificacao identificacao = new Identificacao();
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", "C_MENU");
+        parametros.Add("@IdOperador", identificacao.IdOperador);
+
+        paginas = new Dao().ExecutarProcedureList<Pagina>("stp_ABP_MontaMenu", parametros);
+    }
 }
+
 @{
-    captionSistema = "";
-    captionModulo = "";
-    captionPagina = "";
-
-    difSistema = false;
-    difModulo = false;
-
-   var teste = Model.paginas;
+    ConsultarMenu();
 }
-<div class="container d-flex flex-wrap">
-    <nav>
-        <ul class="menu nav-menu nav-center">
-            <li class="parent">
-                <a href="~/AreaRestrita/">Início</a>
-            </li>
-            @if (Model.paginas != null)
-            {
-                @foreach (var item in Model.paginas)
+
+@section head {
+    <link href="~/Scripts/Style.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+}
+
+@Html.AntiForgeryToken()
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container d-flex justify-content-start align-items-center w-auto gap-4">
+
+        <div class="navbar-brand ms-5 pb-2">
+            <img style="width:30px; height:auto;" src="~/img/logo_nova.png"/>
+        </div>
+
+        <div class="collapse navbar-collapse flex-grow-1" id="navbarNav">
+            <ul class="nav nav-underline">
+
+                <li>
+                    <a class="nav-link" href="/">Início</a>
+                </li>
+
+                @if (paginas != null)
                 {
-                    difSistema = item.CaptionSistema != captionSistema;
-                    difModulo = captionModulo != item.CaptionModulo;
+                    foreach (Pagina pagina in paginas)
+                    {
+                        if (pagina.Status != 1)
+                        {
+                            continue;
+                        }
+                        // Se não houver sistema anterior, abre sistema e módulo
+                        if (sistemaAnterior == null)
+                        {
+                            sistemaAnterior = pagina.CodigoSistema;
+                            moduloAnterior = pagina.CodigoModulo;
+                            @Html.Raw($@"<li class=""nav-item dropdown"">
+                                                <a class=""nav-link dropdown-toggle""
+                                                   href=""#""
+                                                   role=""button""
+                                                   data-bs-toggle=""dropdown"">
+                                                    {pagina.CaptionSistema}
+                                                </a>
+                                                 <ul class=""dropdown-menu"">
+                                                    <li class=""dropdown-header"">
+                                                        {pagina.CaptionModulo}
+                                            ")
+                        }
+                        // Se houver sistema anterior e atual for diferente do anterior, fecha anterior e abre atual (Incluindo o módulo)
+                        if (pagina.CodigoSistema != sistemaAnterior)
+                        {
+                            sistemaAnterior = pagina.CodigoSistema;
+                            moduloAnterior = pagina.CodigoModulo;
+                            @Html.Raw($@"</ul>
+                                       </li>
+                                     <li class=""nav-item dropdown"">
+                                                <a class=""nav-link dropdown-toggle""
+                                                   href=""#""
+                                                   role=""button""
+                                                   data-bs-toggle=""dropdown"">
+                                                    {pagina.CaptionSistema}
+                                                </a>
+                                                 <ul class=""dropdown-menu"">
+                                                    <li class=""dropdown-header"">
+                                                        {pagina.CaptionModulo}
+                                                ")
+                        }
 
-                    if (difModulo && captionModulo != "")
-                    {
-                        @Html.Raw("</ul>\n</li>")
-                    }
+                        if (pagina.CodigoSistema == sistemaAnterior)
+                        {
+                            // Se modulo atual for diferente do anterior, inicia módulo
+                            if (moduloAnterior != pagina.CodigoModulo)
+                            {
+                                moduloAnterior = pagina.CodigoModulo;
+                                @Html.Raw($@"</li>
+                                            <li class=""dropdown-header"">
+                                                   {pagina.CaptionModulo}
+                                                ")
+                            }
+                            if (moduloAnterior == pagina.CodigoModulo)
+                            {
+                                @Html.Raw($@"
+                                            <li>
+                                                <a class=""dropdown-item"" data-id=""{pagina.CodigoPagina}"" data-url=""/AreaRestrita/{pagina.CodigoSistema}/{pagina.CodigoModulo}/{pagina.CodigoPagina}""
+                                                    onclick=""openPage(this)""
 
-                    if (difSistema && captionSistema != "")
-                    {
-                        @Html.Raw("</ul>\n</li>")
-                    }
+                                                       href=""#"">
+                                                    {pagina.CaptionPagina}
+                                                </a>
+                                            <li>
+                                ")
+                            }
+                        }
 
-                    if (difSistema) { captionSistema = item.CaptionSistema; }
-                    if (difSistema)
-                    {
-                        @Html.Raw("\n<li class='parent'>")
-                        @Html.Raw("\n<a href = '#'>" + @item.CaptionSistema + "</a>")
-                        @Html.Raw("\n<ul class='child'>\n")
-                    }
-
-                    if (difModulo) { captionModulo = item.CaptionModulo; }
-                    if (difModulo)
-                    {
-                        @Html.Raw("\n<li class='parent'>")
-                        @Html.Raw("\n<a href='#'>" + @item.CaptionModulo + " <span class='expand'>»</span></a>")
-                        @Html.Raw("\n<ul class='child'>\n")
-                    }
-                    if (item.CaptionModulo == captionModulo && item.CaptionSistema == captionSistema)
-                    {
-                        <li><a href="~/AreaRestrita/@item.CodigoSistema/@item.CodigoModulo/@(item.CodigoPagina)">@item.CaptionPagina</a></li>
                     }
                 }
 
-                @Html.Raw("</ul>\n</li>\n</ul>\n</li>")
+                <!-- Fecha último dropdown menu e última nav dropdown -->
+                @Html.Raw("</ul>")
+                @Html.Raw("</li>")
+            </ul>
+        </div>
+    </div>
+    <div class="d-flex justify-content-center input-group px-5 mx-5" style="width: 40%;">
+        <input class="form-control form-control-sm" id="extrato" name="extrato" placeholder="Extrato por nome do Time." />
+        <button class="btn btn-outline-primary btn-sm" onclick="pesquisar()">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+    </div>
+
+    <div class="d-flex gap-1 align-items-center justify-content-between px-2">
+        <i class="fa-solid fa-sun fs-5"></i>
+        <div class="form-check form-switch w-auto d-flex justify-content-center">
+            <input class="form-check-input" type="checkbox" role="switch" id="switchCheckDefault" onclick="mudarTema()" @(Context.Session.GetString("Tema") == "dark" ? "checked" : "") >
+        </div>
+        <i class="fa-solid fa-moon fs-5"></i>
+    </div>
+    <div class="mx-5">
+        <a class="text-decoration-none" href="~/ControleAcesso/Sair">Sair</a>
+    </div>
+
+</nav>
+<script>
+
+    function pesquisar() {
+        const htmlElement = document.querySelector("html");
+        const tema = htmlElement.getAttribute("data-bs-theme");
+        const NomeTime = document.getElementById("extrato").value;
+
+        if (!NomeTime) {
+            alert("Por favor, digite o ID do Time.");
+            return;
+        }
+
+        const url = `/AreaRestrita/Extrato/Extrato?NomeTime=${NomeTime}`;
+        const tabs = $("#tabs");
+
+
+        const panelHtml = `
+        <div style="height: 100%; width: 100%;">
+            <iframe src="${url}"
+                    data-bs-theme="${tema}"
+                    style="width: 100%; height: 100%; border: none; display: block;"
+                    frameborder="0">
+            </iframe>
+        </div>`;
+
+
+        tabs.html(panelHtml);
+    }
+
+    function mudarTema() {
+        const htmlElement = document.querySelector("html");
+        const switchCheckDefault = document.getElementById("switchCheckDefault");
+        var iframe = document.querySelector("iframe");
+        $.ajax({
+            method: "POST",
+            url: "/AreaRestrita/Prefs", 
+            headers: {
+                  "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
+               },
+            data: { acao: "AT" }
+        }).done(function (res) {
+            const tema = res.trim();
+            $(htmlElement).attr("data-bs-theme", tema);
+            if (iframe != null) {
+                iframe.contentWindow.document.documentElement.setAttribute("data-bs-theme", tema);
             }
-            <li class="parent">
-                <a href="~/ControleAcesso/Sair">Sair</a>
-            </li>
-        </ul>
-    </nav>
-</div>
+            switchCheckDefault.checked = (tema === "dark");
+
+            if (typeof ApexCharts !== 'undefined') {
+                const configTema = {
+                    theme: {
+                        mode: tema
+                    }
+                };
+
+                ApexCharts.exec('chartAproveitamento', 'updateOptions', configTema);
+                ApexCharts.exec('chartArtilharia', 'updateOptions', configTema);
+            }
+        });
+    }
+
+    function adicionaEventos() {
+        document.addEventListener("DOMContentLoaded", function () {
+        const htmlElement = document.documentElement;
+        const switchCheckDefault = document.getElementById("switchCheckDefault");
+
+        const temaAtual = document.documentElement.getAttribute('data-bs-theme');
+
+        if (temaAtual) {
+            htmlElement.setAttribute("data-bs-theme", temaAtual);
+            switchCheckDefault.checked = (temaAtual === "dark");
+        }
+    });
+    }
+
+    function openPage(element) {
+        const url = $(element).data("url");
+        const tabs = $("#tabs");
+        const tema = document.documentElement.getAttribute('data-bs-theme');
+        const panelHtml = `
+        <div class="panel-dinamico" style="height: 100%; width: 100%;">
+            <iframe src="${url}"
+                    data-bs-theme="${tema}"
+                    style="width: 100%; height: 100%; border: none; display: block;"
+                    frameborder="0">
+            </iframe>
+        </div>`;
+
+        tabs.html(panelHtml);
+    }
+
+    //function openPage(element) {
+    //    const url = $(element).data("url");
+
+    //    $("#tabs").load(url);
+    //}
+
+    adicionaEventos();
+</script>

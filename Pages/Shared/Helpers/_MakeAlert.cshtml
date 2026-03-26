@@ -1,0 +1,13 @@
+﻿@{
+    var modelState = ViewData.ModelState;
+}
+
+@foreach (var item in modelState.Where(x => x.Key.StartsWith("alert-")))
+{
+    foreach (var item1 in item.Value.Errors)
+    {
+        <div class="alert @Html.Raw(item.Key)" role="button">
+            @Html.Raw(item1.ErrorMessage)
+        </div>
+    }
+}

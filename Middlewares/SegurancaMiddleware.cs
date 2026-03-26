@@ -11,24 +11,18 @@
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // 1. Definimos quais caminhos precisam de proteção
-            // Aqui protegemos a "AreaRestrita", mas ignoramos a página de Login para evitar loop
-            var path = context.Request.Path.Value?.ToLower();
+            var path = context.Request.Path;
 
-            if (path != null && path.Contains("/arearestrita") && !path.Contains("/controleacesso"))
+            if (path.StartsWithSegments("/AreaRestrita") && !path.StartsWithSegments("/ControleAcesso"))
             {
-                // 2. Verificação da Sessão (Equivalente ao seu if Session["idSessao"] == null)
                 if (string.IsNullOrEmpty(context.Session.GetString("idSessao")))
                 {
-                    // 3. Redirecionamento de Servidor (Substitui o script JS e o Response.End)
                     context.Response.Redirect("/ControleAcesso/Index");
-                    return; // Encerra a requisição aqui, sem processar a página
+                    return; // Interrompe a execução aqui
                 }
             }
 
-            // Se estiver logado ou for página pública, segue o fluxo
-            await _next(context);
-        
+            await _next(context); // Segue para o próximo middleware (ou para a página)
         }
     }
 }

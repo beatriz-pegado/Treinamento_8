@@ -9,7 +9,6 @@
 @{
     // Page.Title = "Sistema";
     ViewData["Title"] = "Sistema";
-    Layout = "/Pages/AreaRestrita/_Layout.cshtml";
 }
 
 @functions {
@@ -119,19 +118,12 @@
         sistema = new Sistema();
     }
 }
-@section head {
-    <link href="~/Scripts/Style.css" rel="stylesheet">
-    <link href="~/css/site.css" rel="stylesheet" />
-}
 
 <body>
     <form name="form1" method="post">
         <input type="hidden" name="acao" id="acao" />
         <input type="hidden" name="idSistema" id="idSistema" value="@idSistema" />
         <input type="hidden" name="view" id="view" value="@((int)view)" />
-
-        @*@RenderPage("~/AreaRestrita/Menu.cshtml")*@
-        @await Component.InvokeAsync("Menu")
 
         <div class="container mt-5 pt-5">
             <div class="d-flex flex-column gap-2 mb-5">
@@ -152,7 +144,7 @@
                         @if (view == View.New)
                         {
                             //@PageHelper.MakeBotao(botoes, "I")
-                            <make-botao lista="botoes" acao="I"></make-botao>
+                            @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "I" })
                         }
 
 
@@ -160,8 +152,8 @@
                         {
                             //@PageHelper.MakeBotao(botoes, "A")
                             //@PageHelper.MakeBotao(botoes, "E")
-                            <make-botao lista="botoes" acao="A"></make-botao>
-                            <make-botao lista="botoes" acao="E"></make-botao>
+                            @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "A" })
+                            @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "E" })
                         }
 
                         <button class="btn btn-outline-primary" type="submit" onclick="estadoInicial()">Limpar</button>
@@ -171,7 +163,9 @@
                 @*  <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
                     @PageHelper.MakeAlert()
                 </div> *@
-                <make-alert />
+                <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
+                    @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+                </div>
 
                 @if (view == View.New || view == View.Edit)
                 {
@@ -179,14 +173,14 @@
                         <label class="input-group-text is-invalid">Codigo do Sistema: </label>
                         <input class="form-control @Util.IsInvalid("codigo", this.ModelState)" type="text" name="codigo" id="codigo" value="@sistema.Codigo" />
                         @* @PageHelper.MakeFeedback("codigo") *@
-                        <make-feedback for-key="codigo" />
+                        @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "codigo")
                     </div>
 
                     <div class="input-group mb-3">
                         <label class="input-group-text is-invalid">Caption do Sistema: </label>
                         <input class="form-control @Util.IsInvalid("caption", this.ModelState)" type="text" name="caption" id="caption" value="@sistema.Caption" />
                         @* @PageHelper.MakeFeedback("caption") *@
-                        <make-feedback for-key="caption"/>
+                        @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "caption")
                     </div>
                 }
 
@@ -228,34 +222,7 @@
         </div>
     </form>
 
-    <script src="~/Scripts/Scripts.js"></script>
-
     <script>
-        function executarAcao(acao) {
-            document.form1.acao.value = acao;
-            document.form1.submit();
-        }
-
-        // Limpa todos os inputs da tela
-        function estadoInicial() {
-            var elements = document.querySelectorAll('input, select');
-            if (elements) {
-                elements.forEach(function (item) {
-                    if (item.name.startsWith("__") || item.type === 'submit') return;
-                    var type = item.type;
-                    var tag = item.tagName.toLowerCase();
-
-                    if (type == 'text' || type == 'hidden' || type == 'password' || type == 'textarea') {
-                        item.value = '';
-                    } else if (type == 'checkbox' || type == 'radio') {
-                        item.checked = false;
-                    } else if (tag == 'select') {
-                        item.selectedIndex = -1;
-                    }
-                });
-            }
-        }
-
         function setId(idSistema) {
             document.form1.view.value = "@((int)View.Edit)";
             document.form1.idSistema.value = idSistema;

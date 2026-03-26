@@ -1,7 +1,5 @@
-using System.Data.SqlClient; // Recomendado para .NET 8
-using System;
-using System.Collections.Generic;
-using System.Text.Json; // Namespace oficial do .NET 8
+using System.Data.SqlClient; 
+using System.Text.Json; 
 
 public class ErroExecucaoException : Exception
 {
@@ -10,7 +8,7 @@ public class ErroExecucaoException : Exception
         public string NomeInput { get; set; }
         public string Mensagem { get; set; }
     }
-    // Usar uma classe tipada é muito melhor que dynamic no .NET 8
+    
     public List<ErroItem> Erros { get; set; } = new List<ErroItem>();
 
     public ErroExecucaoException(SqlErrorCollection erros)

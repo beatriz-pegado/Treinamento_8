@@ -1,0 +1,116 @@
+﻿@page
+@functions {
+    private class Item
+    {
+        public string IdAcao { get; set; }
+        public string IdPagina { get; set; }
+        public string Codigo { get; set; }
+        public string Caption { get; set; }
+        public string Procedure { get; set; }
+        public string CodigoPagina { get; set; }
+        public string CaptionPagina { get; set; }
+
+    }
+
+    public class Quantidade
+    {
+        public string TotalRegistros { get; set; }
+    }
+
+    List<Item> itens = new List<Item>();
+    Exception exception = null;
+    Quantidade quantidade = null;
+    string quantidadePorPagina = null;
+    string pagina = null;
+    string pesquisa = null;
+    List<Botao> botoes = null;
+
+    private void AlimentarVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            quantidadePorPagina = Util.ChecaNulo(Request.Form["quantidadePorPagina"]);
+            pagina = Util.ChecaNulo(Request.Form["pagina"]);
+            pesquisa = Util.ChecaNulo(Request.Form["pesquisa"]);
+            botoes = new BotaoDao().GetAll();
+        }
+    }
+
+    private void Consultar()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@QuantidadePorPagina", quantidadePorPagina);
+        parametros.Add("@Pagina", pagina);
+        parametros.Add("@Pesquisa", pesquisa);
+
+        itens = new Dao().ExecutarProcedureList<Item>("stp_ABP_PaginacaoAcao_Sel", parametros);
+    }
+
+    private void ConsultarQuantidade()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 1);
+        parametros.Add("@Pesquisa", pesquisa);
+
+        quantidade = new Dao().ExecutarProcedureList<Quantidade>("stp_ABP_PaginacaoAcao_Sel", parametros).FirstOrDefault();
+    }
+}
+
+@{
+    Layout = null;
+    try
+    {
+        AlimentarVariaveis();
+        Consultar();
+        ConsultarQuantidade();
+    }
+    catch (Exception ex)
+    {
+        exception = ex;
+    }
+}
+
+@if (exception != null)
+{
+    <div class="alert alert-warning">@exception.Message</div>
+}
+else
+{
+    if (itens != null && itens.Count > 0)
+    {
+        <div class="px-2">
+            <span style="display:none;" id="totalRegistros">@quantidade.TotalRegistros</span>
+            <table class="table table-striped table-hover table-borderless table-scroll">
+                <thead>
+                    <tr>
+                        <th class="w-auto">#</th>
+                        <th class="w-auto">Código da Página</th>
+                        <th>Caption da Página</th>
+                        <th class="w-auto">Código da Ação</th>
+                        <th>Caption da Ação</th>
+                        <th>Procedure</th>
+                        <th class="w-auto"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (Item item in itens)
+                    {
+                        <tr>
+                            <td>@item.IdAcao</td>
+                            <td>@item.CodigoPagina</td>
+                            <td>@item.CaptionPagina</td>
+                            <td>@item.Codigo</td>
+                            <td>@item.Caption</td>
+                            <td>@item.Procedure</td>
+                            <td><button class="btn btn-sm btn-primary js-setId" data-id="@item.IdAcao">Editar</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-light">Nenhum registro encontrado.</div>
+    }
+}

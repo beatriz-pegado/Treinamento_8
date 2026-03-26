@@ -1,0 +1,13 @@
+﻿@model string
+
+@{
+    var modelState = ViewData.ModelState;
+}
+
+@foreach (var item in modelState.Where(x => x.Key.Equals(@Model, StringComparison.OrdinalIgnoreCase)))
+{
+    foreach (var item1 in item.Value.Errors)
+    {
+        <div class="invalid-feedback">@(item1.ErrorMessage)</div>
+    }
+}

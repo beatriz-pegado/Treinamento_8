@@ -1,0 +1,24 @@
+﻿@using Treinamento8_0.Models
+@model Modal
+
+@{
+    var modelState = ViewData.ModelState;
+}
+
+<div class="search" style="width:100%;" data-group="@Model.group" data-tipo-consulta="@Model.tipoConsulta" data-consulta-composta="@Model.consultaComposta">
+    <span class="btn btn-outline-secondary w-100" type="button" onclick="openSearch(this)">...</span>
+    <div class="search-card">
+        <div class="search-head">
+            <div class="search-title">@Model.title</div>
+            <div class="search-close" onclick="closeSearch(this)">x</div>
+        </div>
+        <div class="search-body">
+            <div class="input-group mb-2">
+                <label class="input-group-text" for="chave">@Model.label</label>
+                <input type="text" name="chave" class="form-control" />
+                <button class="btn btn-outline-primary" type="button" onclick="makeSearch(this)">Pesquisar</button>
+            </div>
+            <div class="resultado"></div>
+        </div>
+    </div>
+</div>

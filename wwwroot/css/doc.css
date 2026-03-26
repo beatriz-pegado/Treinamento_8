@@ -1,4 +1,15 @@
 ﻿[data-bs-theme="dark"] {
     --bs-body-color: #fff;
     --bs-body-bg: #212529;
+    --bs-nav-link-color: #fff;
+    --bs-link-hover-color: #ccc;
 }
+
+    [data-bs-theme="dark"] .search-card {
+        background-color: #212529;
+    }
+
+    [data-bs-theme="dark"] .search-head {
+        background-color: #222528;
+        border-bottom: 1px solid #305cd4;
+    }

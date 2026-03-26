@@ -1,0 +1,17 @@
+﻿@using Treinamento8_0.Models
+@model BotaoModel
+
+@{
+    var lista = Model?.Lista;
+    var acaoProc = Model?.Acao;
+    var botao = lista?.FirstOrDefault(x => x.Codigo == acaoProc);
+}
+
+@if (botao != null)
+{
+    <button type="button"
+            class="btn btn-outline-primary"
+            onclick="executarAcao('@botao.Codigo')">
+        @botao.Caption
+    </button>
+}

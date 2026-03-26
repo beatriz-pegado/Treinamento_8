@@ -1,0 +1,54 @@
+@page
+@functions {
+    private class Prefs
+    {
+        public string Theme { get; set; }
+    }
+
+    Prefs prefs = null;
+    string acao = null;
+
+    private void AlimentaVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            acao = Util.ChecaNulo(Request.Form["acao"]);
+        }
+    }
+
+    private void ConsultarPrefs()
+    {
+        Identificacao identificacao = new Identificacao();
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdOperador", identificacao.IdOperador);
+
+        prefs = new Dao().ExecutarProcedureList<Prefs>("stp_ABP_Prefs_Sel", parametros).FirstOrDefault();
+    }
+
+    private void Manutencao()
+    {
+        Identificacao identificacao = new Identificacao();
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdOperador", identificacao.IdOperador);
+        new Dao().ExecutarProcedure("stp_ABP_Prefs_Upd", parametros);
+    }
+
+    private void LimparVariaveis()
+    {
+        acao = null;
+    }
+}
+
+@{
+    Layout = null;
+    AlimentaVariaveis();
+    if (acao == "AT")
+    {
+        Manutencao();
+        ConsultarPrefs();
+        LimparVariaveis();
+        HttpContext.Session.SetString("Tema", prefs.Theme);
+        await Response.WriteAsync(prefs.Theme);
+    }
+    return;
+}

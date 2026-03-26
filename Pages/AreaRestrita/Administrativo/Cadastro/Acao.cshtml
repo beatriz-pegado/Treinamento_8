@@ -1,0 +1,500 @@
+﻿@page
+@{
+    ViewData["Title"] = "Ação";
+}
+
+@functions {
+
+    private enum View
+    {
+        Index,
+        New,
+        Edit
+    }
+
+    public class Acao
+    {
+        public string IdAcao { get; set; }
+        public string IdPagina { get; set; }
+        public string Codigo { get; set; }
+        public string Caption { get; set; }
+        public string Procedure { get; set; }
+        public string CodigoPagina { get; set; }
+        public string CaptionPagina { get; set; }
+    }
+
+    public class Pagina
+    {
+        public string IdPagina { get; set; }
+        public string Caption { get; set; }
+    }
+
+    string acao = null;
+    string idAcao = null;
+    Acao acaoObj = null;
+    View view = View.Index;
+    List<Acao> acoes = null;
+    List<Pagina> paginas = null;
+    List<Botao> botoes = null;
+
+    private void AlimentaVariaveis()
+    {
+        if(HttpContext.Request.HasFormContentType){
+            acao = Util.ChecaNulo(Request.Form["acao"]);
+            idAcao = Util.ChecaNulo(Request.Form["idAcao"]);
+
+            if (!string.IsNullOrWhiteSpace(Request.Form["view"]))
+            {
+                view = (View)Enum.Parse(typeof(View), Request.Form["view"]);
+            }
+        }
+        botoes = new BotaoDao().GetAll();
+    }
+
+    private void LimpaVariaveis()
+    {
+        acao = null;
+        idAcao = null;
+        acaoObj = null;
+    }
+
+    private void ConsultarAcaos()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdAcao", idAcao);
+        parametros.Add("@TipoConsulta", 1);
+
+        acoes = new Dao().ExecutarAcaoList<Acao>("C", parametros);
+    }
+    private void ConsultarPaginas()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 2);
+
+        paginas = new Dao().ExecutarAcaoList<Pagina>("C", parametros);
+    }
+
+    private void Manutencao()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdAcao", acaoObj.IdAcao);
+        parametros.Add("@IdPagina", acaoObj.IdPagina);
+        parametros.Add("@Codigo", acaoObj.Codigo);
+        parametros.Add("@Caption", acaoObj.Caption);
+        parametros.Add("@Procedure", acaoObj.Procedure);
+
+        new Dao().ExecutarAcao(acao, parametros);
+    }
+
+    private void CarregarDados()
+    {
+        if (view == View.Edit && acao == "C" && acoes != null && acoes.Count() == 1)
+        {
+            acaoObj = acoes.FirstOrDefault();
+        }
+    }
+}
+@{
+    AlimentaVariaveis();
+
+    if (acao == "I" || acao == "A" || acao == "E")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            acaoObj = new Acao()
+            {
+                IdAcao = Util.ChecaNulo(Request.Form["idAcao"]),
+                IdPagina = Util.ChecaNulo(Request.Form["idPagina"]),
+                Codigo = Util.ChecaNulo(Request.Form["codigo"]),
+                Caption = Util.ChecaNulo(Request.Form["caption"]),
+                Procedure = Util.ChecaNulo(Request.Form["procedure"])
+            };
+            Manutencao();
+            view = View.Index;
+            LimpaVariaveis();
+            ModelState.AddModelError("alert-success", "Operação realizada com sucesso.");
+        }, this.ModelState);
+    }
+
+    Util.ExceptionHandler(() =>
+    {
+        ConsultarAcaos();
+        ConsultarPaginas();
+        CarregarDados();
+
+    }, this.ModelState);
+
+    if (acaoObj == null)
+    {
+        acaoObj = new Acao();
+    }
+}
+
+<body>
+    <form name="form1" method="post">
+
+        <input type="hidden" name="acao" id="acao" />
+        <input type="hidden" name="idAcao" id="idAcao" value="@idAcao" />
+        <input type="hidden" name="view" id="view" value="@((int)view)" />
+
+        @Html.AntiForgeryToken()
+
+
+        <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
+            @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+        </div>
+
+        <div class="container pt-5">
+            <div class="d-flex justify-content-between mt-3 mb-5" style="min-height:120px;">
+                <div class="d-flex align-items-center">
+                    <p class="h1">Ação</p>
+                </div>
+
+                <div class="d-flex align-items-center ms-auto gap-2">
+
+                    @if (view == View.Index)
+                    {
+                        if (botoes.Any(x => x.Codigo == "I"))
+                        {
+                            <button class="btn btn-outline-primary" type="button" onclick="novo()">Novo</button>
+                        }
+                    }
+                    @if (view == View.New)
+                    {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "I" })
+                    }
+
+
+                    @if (view == View.Edit)
+                    {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "A" })
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "E" })
+                    }
+
+                    <button class="btn btn-outline-primary" type="submit" onclick="estadoInicial()">Limpar</button>
+                </div>
+            </div>
+
+            @if (view == View.New || view == View.Edit)
+            {
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="idPagina">Pagina: </label> <br />
+                    <select class="form-select  @Util.IsInvalid("idPagina", this.ModelState)" name="idPagina">
+                        <option value="">Selecione uma Pagina</option>
+
+                        @foreach (Pagina item in paginas)
+                        {
+                            <!option @(item.IdPagina == acaoObj.IdPagina ? "selected" : "")
+                                    value="@item.IdPagina">
+                                @item.Caption
+                            </!option>
+                        }
+                    </select>
+                    @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "idPagina")
+                </div>
+
+                <div class="input-group mb-3">
+                    <label class="input-group-text is-invalid">Código da Ação: </label>
+                    <input class="form-control @Util.IsInvalid("codigo", this.ModelState)" type="text" name="codigo" id="codigo" value="@acaoObj.Codigo" />
+                    @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "codigo")
+                </div>
+
+                <div class="input-group mb-3">
+                    <label class="input-group-text is-invalid">Caption da Ação: </label>
+                    <input class="form-control @Util.IsInvalid("caption", this.ModelState)" type="text" name="caption" id="caption" value="@acaoObj.Caption" />
+                    @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "caption")
+                </div>
+
+                <div class="input-group mb-3">
+                    <label class="input-group-text is-invalid">Procedure: </label>
+                    <input class="form-control @Util.IsInvalid("procedure", this.ModelState)" type="text" name="procedure" id="procedure" value="@acaoObj.Procedure" />
+                    @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "procedure")
+                </div>
+            }
+
+            @if (view == View.Index)
+            {
+                <div class="container">
+                    <div>
+                        Exibindo
+                        <span id="span-infoPaginacaoInicio" class="text-primary"></span>
+                        <span id="span-infoPaginacaoFim" class="text-primary"></span>
+                        de
+                        <span id="span-infoTotalRegistros"></span>
+                        registros
+                    </div>
+
+                    <div class="card mt-2">
+                        <div class='p-2'>
+                            <div class="d-flex gap-2 mt-2">
+                                <div class="flex-grow-1">
+                                    <input type="text" name="pesquisa" id="pesquisa" class="form-control" placeholder="Buscar ação por código ou nome" />
+                                </div>
+                                <div class="w-auto">
+                                    <select id="quantidadePorPagina" name="quantidadePorPagina" class="form-select">
+                                        <option value="10">10 por página</option>
+                                        <option value="20">20 por página</option>
+                                        <option value="30">30 por página</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="resultado"></div>
+                        <div class="card-footer">
+                            <div id="paginacao" class="d-flex gap-4 justify-content-center align-items-center">
+                                <div>
+                                    <button type="button" id="btn-paginacaoPrimeiro" class="btn btn-outline-secondary js-mudarPagina" title="Ir para o primeiro" data-acao="PRIMEIRO">&lt;&lt;</button>
+                                </div>
+                                <div>
+                                    <button type="button" id="btn-paginacaoAnterior" class="btn btn-outline-secondary js-mudarPagina" title="Anterior" data-acao="ANTERIOR">&lt;</button>
+                                </div>
+                                <div>
+                                    Página
+                                </div>
+                                <div>
+                                    <select class="form-select js-mudarPagina" name="pagina" id="pagina"></select>
+                                </div>
+                                <div>
+                                    de <span id="span-infoQuantidadeDePaginas"></span>
+                                </div>
+                                <div>
+                                    <button type="button" id="btn-paginacaoProximo" class="btn btn-outline-secondary js-mudarPagina" title="Próximo" data-acao="PROXIMO">></button>
+                                </div>
+                                <div>
+                                    <button type="button" id="btn-paginacaoUltimo" class="btn btn-outline-secondary js-mudarPagina" title="Ir para o último" data-acao="ULTIMO">>></button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            }
+        </div>
+    </form>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <script>
+
+        function setId(idAcao) {
+            document.form1.view.value = "@((int)View.Edit)";
+            document.form1.idAcao.value = idAcao;
+            executarAcao('C');
+        }
+
+        function novo() {
+            document.form1.view.value = "@((int)View.New)";
+            executarAcao('');
+        }
+
+        function consultarItens() {
+            var resultado = document.querySelector('.resultado');
+
+            // Quantidade de registros por página selecionado no select
+            let quantidadePorPagina = document.form1.quantidadePorPagina.value;
+
+            // Página atual
+            let pagina = document.form1.pagina.value;
+
+            // Se foi feita alguma pesquisa
+            let pesquisa = document.form1.pesquisa.value;
+
+
+            // Envia dados para a AuxPaginacao para que seja feita a consulta
+            $.ajax({
+                type: "POST",
+                url: "/AreaRestrita/AuxPaginacaoAcao",
+                headers: {
+                    "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
+                },
+                data: {
+                    quantidadePorPagina: quantidadePorPagina,
+                    pagina: pagina,
+                    pesquisa: pesquisa
+                },
+                success: function (res) {
+                    resultado.innerHTML = res;
+
+                    // Total de registros encontrados com base nos filtros
+                    const totalRegistros = parseInt(resultado.querySelector("#totalRegistros").innerText);
+
+                    Array.from(document.querySelectorAll('.js-setId')).forEach(function (item) {
+                        item.addEventListener("click", function () {
+                            var id = this.getAttribute("data-id");
+                            setId(id);
+                        });
+                    });
+
+                    atualizarPaginacao(pagina, totalRegistros);
+                },
+                error: function (xhr) {
+                    body.innerHTML = xhr.responseText;
+                },
+                finally: function () {
+                    body.remove(div);
+                }
+            });
+        }
+        function atualizarPaginacao(pagina, totalRegistros) {
+            var infoPaginacaoInicio = document.querySelector("#span-infoPaginacaoInicio");
+            var infoPaginacaoFim = document.querySelector("#span-infoPaginacaoFim");
+            var infoTotalRegistros = document.querySelector("#span-infoTotalRegistros");
+            var infoQuantidadeDePaginas = document.querySelector("#span-infoQuantidadeDePaginas");
+            var quantidadePorPagina = parseInt(document.form1.quantidadePorPagina.value);
+            var selectPaginas = document.querySelector("#pagina");
+
+            let paginacaoInicio = 0;
+            let paginacaoFim = 0;
+            let quantidadeDePaginas = 0;
+
+            // Assume que não sabemos a página atual
+            if (totalRegistros == 0) {
+                pagina = "";
+            }
+
+            // Se houver algum registro
+            if (totalRegistros > 0) {
+                // Se a página for vazia, assumimos pagina = 1
+                if (pagina == "") {
+                    pagina = 1;
+                }
+
+                // Pega a primeira página da seleção de páginas atual. EX: pag 2, 20 por página = (2 - 1) * 20 + 1 = 21. Logo, o primeiro da segunda página será o 21
+                paginacaoInicio = ((pagina - 1) * quantidadePorPagina) + 1;
+
+                // Na última página, se o total de registros for menor que o valor máximo na página, a paginacaoFim será o total de registros.
+                if (pagina * quantidadePorPagina <= totalRegistros) {
+                    paginacaoFim = pagina * quantidadePorPagina;
+                } else {
+                    paginacaoFim = totalRegistros;
+                }
+
+                // Calcula quantidade de páginas
+                if (totalRegistros % quantidadePorPagina == 0) {
+                    quantidadeDePaginas = parseInt(totalRegistros / quantidadePorPagina);
+                } else {
+                    quantidadeDePaginas = parseInt((totalRegistros / quantidadePorPagina) + 1);
+                }
+            }
+
+            infoPaginacaoInicio.innerHTML = `<b>${paginacaoInicio}</b>`;
+            infoPaginacaoFim.innerHTML = `<b>- ${paginacaoFim}</b>`;
+            infoTotalRegistros.innerHTML = `<b>${totalRegistros}</b>`;
+            infoQuantidadeDePaginas.innerHTML = quantidadeDePaginas;
+
+            selectPaginas.innerHTML = "";
+
+            for (var i = 1; i <= quantidadeDePaginas; i++) {
+                var option = document.createElement("option");
+                option.value = i;
+                option.textContent = i;
+                selectPaginas.appendChild(option);
+            }
+
+            selectPaginas.value = pagina;
+
+            atualizarBotoes(pagina, quantidadeDePaginas);
+        }
+
+        function atualizarBotoes(pagina, quantidadeDePaginas) {
+            var btnPrimeiro = document.querySelector("#btn-paginacaoPrimeiro");
+            var btnAnterior = document.querySelector("#btn-paginacaoAnterior");
+            var btnProximo = document.querySelector("#btn-paginacaoProximo");
+            var btnUltimo = document.querySelector("#btn-paginacaoUltimo");
+
+            if (pagina == "") {
+                btnProximo.disabled = true;
+                btnUltimo.disabled = true;
+                btnPrimeiro.disabled = true;
+                btnAnterior.disabled = true;
+            } else if (pagina == 1) {
+                btnPrimeiro.disabled = true;
+                btnAnterior.disabled = true;
+
+                if (quantidadeDePaginas == 1) {
+                    btnProximo.disabled = true;
+                    btnUltimo.disabled = true;
+                } else {
+                    btnProximo.disabled = false;
+                    btnUltimo.disabled = false;
+                }
+            } else if (pagina == quantidadeDePaginas) {
+                btnProximo.disabled = true;
+                btnUltimo.disabled = true;
+                btnPrimeiro.disabled = false;
+                btnAnterior.disabled = false;
+            } else {
+                btnProximo.disabled = false;
+                btnUltimo.disabled = false;
+                btnPrimeiro.disabled = false;
+                btnAnterior.disabled = false;
+            }
+        }
+
+        function mudarPagina(acao = null) {
+            var pagina = parseInt(document.form1.pagina.value);
+
+            if (acao) {
+                switch (acao) {
+                    case "PROXIMO":
+                        pagina++;
+                        break;
+                    case "ANTERIOR":
+                        pagina--;
+                        break;
+                    case "PRIMEIRO":
+                        pagina = 1;
+                        break;
+                    case "ULTIMO":
+                        pagina = parseInt(document.querySelector("#span-infoQuantidadeDePaginas").innerText);
+                        break;
+                }
+
+                document.form1.pagina.value = pagina;
+            }
+            consultarItens();
+        }
+
+        function adicionaEventos() {
+            // Evento de mudança de página presente nos botões e no select da página
+            Array.from(form1.querySelectorAll(".js-mudarPagina")).forEach(function (item) {
+                if (item.tagName.toLowerCase() == "select") {
+                    item.addEventListener("change", () => mudarPagina());
+                } else if (item.tagName.toLowerCase() == "button") {
+                    item.addEventListener("click", () =>
+                        mudarPagina(item.getAttribute("data-acao"))
+                    );
+                }
+            });
+
+            // Evento de mudança de quantidade de registros por página
+            document.form1.querySelector("#quantidadePorPagina").addEventListener("change", () => {
+                document.form1.pagina.value = 1;
+                consultarItens();
+            });
+
+            // Adiciona debounce na pesquisa de registros
+            document.form1.pesquisa.addEventListener('keyup', debounce(() => {
+                document.form1.pagina.value = 1;
+                consultarItens();
+            }, 300));
+        }
+        function init() {
+            consultarItens();
+            adicionaEventos();
+        }
+
+        // Define tempo de delay ao pesquisar
+        function debounce(callback, delay) {
+            let timeout;
+            return function () {
+                clearTimeout(timeout);
+                timeout = setTimeout(callback, delay);
+            }
+        }
+
+        init();
+    </script>
+
+</body>
+
+

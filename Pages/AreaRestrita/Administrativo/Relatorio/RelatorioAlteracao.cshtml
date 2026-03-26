@@ -1,0 +1,286 @@
+﻿@page
+@using System.Data
+@using System.Text.Json;
+
+@{
+    ViewData["Title"] = "Relatório de Alterações";
+}
+
+@functions {
+    string cpf = null;
+    string nomeOperador = null;
+    string tipoConsulta = null;
+    string dataInicio = null;
+    string dataFim = null;
+    string dataAtual = null;
+    string alteracoes = null;
+
+    private void AlimentaVariaveis()
+    {
+        
+        //cpf = Util.ChecaNulo(Request.QueryString["Cpf"]);
+
+        // No .NET 8, usamos Request.Query["chave"]
+        cpf = Util.ChecaNulo(Request.Query["Cpf"]);
+        dataInicio = Util.ChecaNulo(Request.Query["DataInicio"]);
+        dataFim = Util.ChecaNulo(Request.Query["DataFim"]);
+        dataAtual = Util.ChecaNulo(Request.Query["DataAtual"]);
+        tipoConsulta = Util.ChecaNulo(Request.Query["tipoConsulta"]);
+        nomeOperador = Util.ChecaNulo(Request.Query["nomeOperador"]);
+       
+    }
+
+    private DataTable Consultar()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", tipoConsulta);
+        parametros.Add("@Chave", cpf);
+        parametros.Add("@DataInicio", dataInicio);
+        parametros.Add("@DataFim", dataFim);
+
+        return new Dao().ExecutarProcedureDt("stp_ABP_EstruturaTabelas", parametros);
+    }
+
+    private List<Dictionary<string, object>> MakeRows(DataTable dt)
+    {
+        List<Dictionary<string, object>> rows = new List<Dictionary<string, object>>();
+
+        foreach (DataRow dr in dt.Rows)
+        {
+            Dictionary<string, object> row = new Dictionary<string, object>();
+
+            foreach (DataColumn col in dt.Columns)
+            {
+                row.Add(col.ColumnName, dr[col]);
+            }
+            rows.Add(row);
+        }
+
+        return rows;
+    }
+}
+
+@{
+    AlimentaVariaveis();
+
+    DataTable dt = Consultar();
+
+    List<Dictionary<string, object>> rows = MakeRows(dt);
+
+    alteracoes = JsonSerializer.Serialize(rows);
+}
+
+<body>
+    <form name="form1" method="post">
+        <div class="container py-4" style="max-width: 900px;">
+
+            <!-- Cabeçalho -->
+
+            <div class="first-page-header" style="position: relative;">
+                <div class="d-flex align-items-center justify-content-center position-relative mb-2">
+                    <div style="position: absolute; left: 0;">
+                        <img style="width:50px; height:auto;" src="~/AreaRestrita/logo_nova.png" />
+                    </div>
+
+                    <div class="text-center">
+                        <p class="h4 fw-bold mb-1">Relatório de Alterações</p>
+                        <p class="text-secondary mb-0">Gerado em @dataAtual</p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="mb-4">
+                    <p class="h5 fw-bold mb-3">Informações do Operador</p>
+
+                    <div class="row mb-2">
+                        <div class="col-3 fw-semibold">CPF:</div>
+                        <div class="col-9">@cpf</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-3 fw-semibold">Nome do Operador:</div>
+                        <div class="col-9">@nomeOperador</div>
+                    </div>
+                </div>
+            </div>
+
+
+            @{
+                var inicio = Util.FormatarData(dataInicio, 22);
+                var fim = Util.FormatarData(dataFim, 22);
+            }
+
+
+            <div class="row mb-2">
+                <div class="col-3 fw-semibold">Período:</div>
+                <div class="col-9">
+                    @if (inicio != null && fim != null)
+                    {
+                        @Html.Raw($"{inicio} até {fim}")
+                        ;
+                    }
+                    else if (inicio != null)
+                    {
+                        @Html.Raw($"A partir de {inicio}")
+                        ;
+                    }
+                    else if (fim != null)
+                    {
+                        @Html.Raw($"Até {fim}")
+                        ;
+                    }
+                    else
+                    {
+                        @Html.Raw("Todo o período")
+                        ;
+                    }
+
+                </div>
+            </div>
+
+
+            @if (tipoConsulta != null)
+            {
+                <div class="row mb-2">
+                    <div class="col-3 fw-semibold">Página:</div>
+                    <div id="nomePagina" class="col-9">@(tipoConsulta == "Alteracoes" ? "Todas as páginas" : tipoConsulta.Replace("Alteracoes", ""))</div>
+                </div>
+            }
+        </div>
+
+        <hr>
+
+        <div>
+            <p class="h5 fw-bold mb-3">Registros de Alterações</p>
+
+            <div id="tabelaAlteracoes"></div>
+        </div>
+
+        </div>
+    </form>
+
+    <script src="~/Scripts/Scripts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    @{
+        var alteracoesSeguro = alteracoes != null ? alteracoes : "[]";
+    }
+    <script>
+             window.onload = function () {
+            try {
+                var dados = @Html.Raw(alteracoesSeguro) ;
+                if (dados && dados.length > 0) {
+                    document.getElementById("tabelaAlteracoes").innerHTML = populateTableAlteracao(dados);
+                } else {
+                    document.getElementById("tabelaAlteracoes").innerHTML = "<p>Nenhum registro encontrado.</p>";
+                }
+            } catch (e) {
+                console.error("Erro ao parsear alterações:", e);
+                document.getElementById("tabelaAlteracoes").innerHTML = "<p>Erro ao carregar os dados.</p>";
+            }
+            window.print();
+        }
+
+            /* Formata tabela de alterações do operador */
+
+            /* Formatação de caracteres especiais */
+            function escapeHtml(value) {
+                if (value == null) return "";
+                return String(value)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;");
+            }
+
+            /* Colunas fixas para todas as tabelas */
+            const COLUMNS = {
+                data: "Data",
+                ip: "ViaIp",
+                tabela: "Tabela",
+                operacao: "Operação",
+                info: "Informacao",
+                para: "Para",
+                sessao: "idSessao"
+            };
+
+            function populateTableAlteracao(json) {
+                if (!json || json.length === 0) return "<div>Nenhum registro encontrado</div>";
+
+                return `<div class="table-wrapper table-responsive">
+                    <table class="table table-hover table-bordered table-sm table-scroll">
+                        ${populateHeaderAlteracao()}
+                        ${populateBodyAlteracao(json)}
+                    </table>
+                </div>`;
+            }
+
+            function populateHeaderAlteracao() {
+                return `<thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>IP</th>
+                                <th>Tabela</th>
+                                <th>Operação</th>
+                                <th>Informação</th>
+                                <th>Para</th>
+                            </tr>
+                        </thead>`;
+            }
+
+            function populateBodyAlteracao(json) {
+                function makeGroupKey(r) {
+                    return [r[COLUMNS.data], r[COLUMNS.ip], r[COLUMNS.tabela], r[COLUMNS.operacao], r[COLUMNS.sessao]].join("|");
+                }
+
+                const grupos = [];
+                const keyMap = new Map();
+
+                json.forEach((r) => {
+                    const key = makeGroupKey(r);
+                    if (!keyMap.has(key)) {
+                        const grupo = { key, meta: r, linhas: [] };
+                        keyMap.set(key, grupo);
+                        grupos.push(grupo);
+                    }
+                    keyMap.get(key).linhas.push(r);
+                });
+
+                let tbody = "<tbody>";
+
+                grupos.forEach((grupo, index) => {
+                    const { meta, linhas } = grupo;
+
+                    if (index > 0) {
+                        tbody += `<tr class="table-group-divider"><td colspan="6"></td></tr>`;
+                    }
+
+                    linhas.forEach((linha, i) => {
+                        tbody += "<tr>";
+
+                        if (i === 0) {
+                            tbody += `<td>${escapeHtml(meta[COLUMNS.data])}</td>`
+                                + `<td>${escapeHtml(meta[COLUMNS.ip])}</td>`
+                                + `<td>${escapeHtml(meta[COLUMNS.tabela])}</td>`
+                                + `<td>${escapeHtml(meta[COLUMNS.operacao])}</td>`;
+                        } else {
+                            tbody += "<td></td><td></td><td></td><td></td>";
+                        }
+
+                        tbody += `<td>${escapeHtml(linha[COLUMNS.info])}</td>`
+                            + `<td>${escapeHtml(linha[COLUMNS.para])}</td>`
+                            + "</tr>";
+                    });
+                });
+
+                tbody += "</tbody>";
+                return tbody;
+            }
+
+
+
+
+    </script>
+</body>
+
+

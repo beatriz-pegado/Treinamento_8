@@ -16,18 +16,58 @@ build_property.EnableComHosting =
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
-build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = true
 build_property.MSBuildProjectDirectory = C:\Users\12196847402\source\repos\Treinamento8_0
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Administrativo/Cadastro/Acao.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEFkbWluaXN0cmF0aXZvXENhZGFzdHJvXEFjYW8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Administrativo/Cadastro/Sistema.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEFkbWluaXN0cmF0aXZvXENhZGFzdHJvXFNpc3RlbWEuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Administrativo/Relatorio/ConsultaAlteracao.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEFkbWluaXN0cmF0aXZvXFJlbGF0b3Jpb1xDb25zdWx0YUFsdGVyYWNhby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Administrativo/Relatorio/RelatorioAlteracao.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEFkbWluaXN0cmF0aXZvXFJlbGF0b3Jpb1xSZWxhdG9yaW9BbHRlcmFjYW8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/AuxConsulta.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEF1eENvbnN1bHRhLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/AuxConsultaAlteracao.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEF1eENvbnN1bHRhQWx0ZXJhY2FvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/AuxPaginacaoAcao.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEF1eFBhZ2luYWNhb0FjYW8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Extrato/ConsultarJogador.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEV4dHJhdG9cQ29uc3VsdGFySm9nYWRvci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Extrato/ConsultarTime.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEV4dHJhdG9cQ29uc3VsdGFyVGltZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Extrato/Extrato.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEV4dHJhdG9cRXh0cmF0by5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Prefs.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXFByZWZzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/_Layout.cshtml]
@@ -64,6 +104,22 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/12196847402/source/repos/Treinamento8_0/Pages/Shared/Components/Menu/Default.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXENvbXBvbmVudHNcTWVudVxEZWZhdWx0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/Shared/Helpers/_BotaoHelper.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXEhlbHBlcnNcX0JvdGFvSGVscGVyLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/Shared/Helpers/_MakeAlert.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXEhlbHBlcnNcX01ha2VBbGVydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/Shared/Helpers/_MakeFeedback.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXEhlbHBlcnNcX01ha2VGZWVkYmFjay5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/Shared/Helpers/_MakeModal.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXEhlbHBlcnNcX01ha2VNb2RhbC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/12196847402/source/repos/Treinamento8_0/Pages/Shared/_ValidationScriptsPartial.cshtml]

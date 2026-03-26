@@ -1,0 +1,139 @@
+﻿@page
+
+@{
+    ViewData["Title"] = "Extrato Time";
+}
+
+@using System.Data
+@using System.Text.Json
+
+@functions {
+    public enum Status
+    {
+        Inativo,
+        Ativo
+    }
+
+    public class MontaMenu
+    {
+        public string IdOperador { get; set; }
+        public string IdAcao { get; set; }
+        public string CaptionAcao { get; set; }
+        public string CodigoAcao { get; set; }
+        public string idPrimeiraAba { get; set; }
+
+    }
+    string NomeTime = null;
+    List<MontaMenu> listaMontaMenu = null;
+    private void AlimentaVariaveis()
+    {
+        NomeTime = (HttpContext.Request.HasFormContentType ? Util.ChecaNulo(Request.Form["NomeTime"]) : Util.ChecaNulo(Request.Query["NomeTime"]));
+    }
+    private void ConsultaMontaMenu()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", "C_PAGINAEXTRATO");
+        parametros.Add("@IdOperador", HttpContext.Session.GetString("IdOperador"));
+        parametros.Add("@CodigoSistema", "EXTRATO");
+        parametros.Add("@CodigoModulo", "EXTRATO");
+        parametros.Add("@CodigoPagina", "ConsultarTime");
+
+        listaMontaMenu = new Dao().ExecutarProcedureList<MontaMenu>("stp_ABP_MontaMenu", parametros);
+    }
+
+
+}
+
+@{
+    AlimentaVariaveis();
+    ConsultaMontaMenu();
+}
+
+<body>
+    <form name="form1" method="post">
+        <input type="hidden" name="NomeTime" id="NomeTime" value="@NomeTime" />
+        @Html.AntiForgeryToken()
+        @if (listaMontaMenu != null)
+        {
+            <div class="d-flex">
+                <div class="m-2 ms-5 ps-4 pt-4" style="width:20%;">
+                    <p class="h5">Informações</p>
+                    @foreach (MontaMenu item in listaMontaMenu)
+                    {
+                        <div>
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="@(item.CodigoAcao)"
+                                   name="@(item.CodigoAcao)"
+                                   onchange="checkCampo(this)" />
+                            <label class="form-check-label" for="@(item.CodigoAcao)">
+                                @item.CaptionAcao
+                            </label>
+                        </div>
+                    }
+                </div>
+
+                <div id="dados" class="me-5 p-4 w-100">
+                </div>
+            </div>
+        }
+    </form>
+
+    @section scripts {
+        <script>
+            function checkCampo(check) {
+                var idCorpo = "body-" + check.id;
+                var campo = document.getElementById(idCorpo);
+                var nomeTime = document.getElementById("NomeTime").value;
+
+                if (campo == null) {
+                    var containerDados = document.getElementById("dados");
+
+                    var novoCard = document.createElement("div");
+                    novoCard.id = idCorpo;
+                    containerDados.appendChild(novoCard);
+
+                    $.ajax({
+                        type: "POST",
+                        url: `/AreaRestrita/Extrato/${check.id}`,
+                        headers: {
+                            "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
+                        },
+                        data: { NomeTime: nomeTime },
+                        success: function (res) {
+                            $(novoCard).html(res);
+
+                            var collapseEl = novoCard.querySelector('.collapse');
+                            var headerEl = novoCard.querySelector('.card-header');
+
+                            if (collapseEl && headerEl) {
+                                var bsCollapse = new bootstrap.Collapse(collapseEl, {
+                                    toggle: false
+                                });
+
+                                headerEl.addEventListener('click', function () {
+                                    bsCollapse.toggle(); 
+                                });
+                            }
+                        },
+                        error: function () {
+                            $(novoCard).html("<div class='p-3 text-danger'>Erro ao carregar módulo.</div>");
+                        }
+                    });
+                } else {
+                    // Se já existe, apenas alterna a visibilidade
+                    campo.hidden = !campo.hidden;
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+                var checkInicial = document.getElementById("ConsultarTime");
+
+                if (checkInicial) {
+                    checkInicial.checked = true;
+                    checkCampo(checkInicial);
+                }
+            });
+        </script>
+    }
+</body>

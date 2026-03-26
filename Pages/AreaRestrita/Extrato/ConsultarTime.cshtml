@@ -1,0 +1,123 @@
+﻿@page
+@{
+    ViewData["Title"] = "Extrato Time";
+}
+
+@using System.Data
+@using System.Text.Json
+
+@functions {
+
+    public class Time
+    {
+        public string idTime { get; set; }
+        public string NomeTime { get; set; }
+        public string DataInclusaoTime { get; set; }
+        public string UsuarioInclusaoTime { get; set; }
+    }
+
+    string NomeTime = null;
+    List<Time> dados = null;
+    Time time = null;
+
+    private void AlimentaVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            NomeTime = Util.ChecaNulo(Request.Form["NomeTime"]);
+        }
+    }
+
+    private void ConsultarTime()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdSessao", HttpContext.Session.GetString("idSessao"));
+        parametros.Add("@NomeTime", NomeTime);
+        parametros.Add("@TipoConsulta", "TIME");
+
+        dados = new Dao().ExecutarProcedureList<Time>("stp_ABP_ExtratoTime_Sel", parametros);
+    }
+
+    private void CarregarDados()
+    {
+        if (dados != null)
+        {
+            time = dados.FirstOrDefault();
+        }
+    }
+
+}
+
+@{
+    AlimentaVariaveis();
+
+    ConsultarTime();
+    CarregarDados();
+}
+
+@if (dados != null)
+{
+    <div id="body-ConsultarTime" class="card mt-2">
+        <div class="card-header"
+             data-bs-toggle="collapse" data-bs-target="header-@time.idTime"
+             style="cursor: pointer;">
+            <div class="row">
+                <div class="col">Dados do Time</div>
+                @{
+                    DateTime data = DateTime.Now;
+                }
+
+                <div class="col">
+                    <div>Acessado em: @data</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pl-3 pr-3 collapse show" id="header-@time.idTime">
+            <div class="table-responsive mt-3 mx-3">
+                <table class="table table-bordered table-hover">
+                    <tbody>
+                        <tr>
+                            <td class="p-2">
+                                <div class="text-muted" style="font-size: 0.8rem;">
+                                    ID do Time
+                                </div>
+                                <strong>@time.idTime</strong>
+                            </td>
+                            <td class="p-2">
+                                <div class="text-muted" style="font-size: 0.8rem;">
+                                    Nome
+                                </div>
+                                <strong>@time.NomeTime</strong>
+                            </td>
+                            <td class="p-2">
+                                <div class="text-muted" style="font-size: 0.8rem;">
+                                    Data de Inclusão
+                                </div>
+                                <strong>@time.DataInclusaoTime</strong>
+                            </td>
+
+                        </tr>
+                        <tr>
+                            <td class="p-2">
+                                <div class="text-muted" style="font-size: 0.8rem;">
+                                    Usuário de Inclusão
+                                </div>
+                                <strong>@time.UsuarioInclusaoTime</strong>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+}
+else
+{
+    <div class="card mt-2 p-4 text-center">Nenhum Registro Encontrado</div>
+}
+
+
+
+

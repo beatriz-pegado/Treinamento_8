@@ -1,0 +1,128 @@
+﻿@page
+
+@using System.Data
+@using System.Text.Json
+@functions {
+
+    public enum TipoJogador
+    {
+        Jogador = 'J',
+        Capitao = 'C',
+        Tecnico = 'T'
+    }
+
+    public class Jogador
+    {
+        public string NomeJogador { get; set; }
+        public string Suspenso { get; set; }
+        public char Tipo { get; set; }
+        public string DataInclusaoJogador { get; set; }
+        public string UsuarioInclusaoJogador { get; set; }
+    }
+
+    string NomeTime = null;
+    List<Jogador> dados = null;
+    Jogador jogador = null;
+
+    private void AlimentaVariaveis()
+    {
+        NomeTime = (HttpContext.Request.HasFormContentType ? Request.Form["NomeTime"] : Util.ChecaNulo(Request.Query["NomeTime"]));
+    }
+
+    private void ConsultarJogador()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdSessao", HttpContext.Session.GetString("idSessao"));
+        parametros.Add("@NomeTime", NomeTime);
+        parametros.Add("@TipoConsulta", "JOGADOR");
+
+        dados = new Dao().ExecutarProcedureList<Jogador>("stp_ABP_ExtratoTime_Sel", parametros);
+    }
+
+    private void CarregarDados()
+    {
+        if (dados != null)
+        {
+            jogador = dados.FirstOrDefault();
+        }
+    }
+
+}
+
+@{
+    AlimentaVariaveis();
+
+    ConsultarJogador();
+    CarregarDados();
+}
+
+@if (dados != null) { 
+    <div class="card mt-5">
+        <div class="card-header"
+             data-bs-toggle="collapse" data-bs-target="header-@jogador.NomeJogador" style="cursor: pointer;">
+            <div class="row">
+                <div class="col">Dados do Jogador</div>
+
+                @{
+                    DateTime data = DateTime.Now;
+                }
+
+                <div class="col">
+                    <div>Acessado em: @data</div>
+                </div>
+            </div>
+        </div>
+        <div class="pl-3 pr-3 collapse show" id="header-@jogador.NomeJogador">
+            <div class="table-responsive mt-3 mx-3">
+                <table class="table table-striped table-sm table-bordered table-hover">
+                    <tbody>
+
+                        @if (dados != null)
+                        {
+                            foreach (Jogador item in dados)
+                            {
+                                <tr>
+                                    <td class="p-2">
+                                        <div class="text-muted">Nome do Jogador</div>
+                                        @item.NomeJogador
+                                    </td>
+
+                                    <td class="p-2">
+                                        <div class="text-muted">Suspenso</div>
+                                        @item.Suspenso
+                                    </td>
+
+                                    <td class="p-2">
+                                        <div class="text-muted">Tipo</div>
+                                        @((char)TipoJogador.Capitao == item.Tipo ? "Capitão" : ((char)TipoJogador.Tecnico == item.Tipo ? "Tecnico" : "Jogador"))
+                                    </td>
+
+                                    <td class="p-2">
+                                        <div class="text-muted">Data de Inclusão</div>
+                                        <div class="text-muted">Data de Inclusão</div>
+                                        @item.DataInclusaoJogador
+                                    </td>
+
+                                    <td class="p-2">
+                                        <div class="text-muted">Usuário de Inclusão</div>
+                                        @item.UsuarioInclusaoJogador
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center">Nenhum dado encontrado.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card mt-2 p-4 text-center">Nenhum Registro Encontrado</div>
+}

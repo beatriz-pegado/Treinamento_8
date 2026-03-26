@@ -16,6 +16,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddRazorPages();
 builder.Services.AddSession();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 builder.Services.AddTransient<IIdentificacao, Identificacao>();
 
 var app = builder.Build();

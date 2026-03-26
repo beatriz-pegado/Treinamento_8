@@ -1,0 +1,75 @@
+@page
+@using System.Data
+@using System.Text.Json;
+@using Microsoft.AspNetCore.Http;
+
+@functions {
+	string chave = null;
+	string tipoConsulta = null;
+	string consultaComposta = null;
+	string dataInicio = null;
+	string dataFim = null;
+
+	private void AlimentaVariaveis() {
+		if (HttpContext.Request.HasFormContentType)
+		{
+			chave = Util.ChecaNulo(Request.Form["chave"]);
+			tipoConsulta = Util.ChecaNulo(Request.Form["tipoConsulta"]);
+			consultaComposta = Util.ChecaNulo(Request.Form["consultaComposta"]);
+			dataInicio = Util.ChecaNulo(Request.Form["dataInicio"]);
+			dataFim = Util.ChecaNulo(Request.Form["dataFim"]);
+		}
+	}
+
+	private DataTable Consultar()
+	{
+		Dictionary<string, object> parametros = new Dictionary<string, object>();
+		parametros.Add("@TipoConsulta", tipoConsulta);
+		parametros.Add("@Chave", chave);
+		parametros.Add("@ConsultaComposta", consultaComposta);
+		parametros.Add("@DataInicio", dataInicio);
+		parametros.Add("@DataFim", dataFim);
+
+		return new Dao().ExecutarProcedureDt("stp_ABP_EstruturaTabelas", parametros);
+	}
+
+	private List<Dictionary<string, object>> MakeRows(DataTable dt)
+	{
+		List<Dictionary<string, object>> rows = new List<Dictionary<string, object>>();
+
+		foreach(DataRow dr in dt.Rows)
+		{
+			Dictionary<string, object> row = new Dictionary<string, object>();
+
+			foreach(DataColumn col in dt.Columns)
+			{
+				row.Add(col.ColumnName, dr[col]);
+			}
+			rows.Add(row);
+		}
+
+		return rows;
+	}
+}
+
+@{
+	Layout = null;
+	try
+	{
+		AlimentaVariaveis();
+
+		DataTable dt = Consultar();
+
+		List<Dictionary<string, object>> rows = MakeRows(dt);
+
+		string json = JsonSerializer.Serialize(rows);
+		Response.ContentType = "application/json";
+
+		//Response.Write(json);
+		await Response.WriteAsync(json);
+	}
+	catch (Exception ex)
+	{
+		await Response.WriteAsync(ex.Message);
+	}
+ }

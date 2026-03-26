@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
 using System.Data.SqlClient;
 using System.Reflection;
 using Treinamento8_0.Interfaces;
@@ -100,6 +101,35 @@ public class Dao : IDao
     {
         string procedure = GetNomeProcedure(acao);
         return ExecutarProcedureList<T>(procedure, parametros);
+    }
+
+    public DataTable ExecutarProcedureDt(string procedure, Dictionary<string, object> parametros)
+    {
+        DataTable dt = new DataTable();
+
+        SqlConnection conn = new SqlConnection(stringConexao);
+
+        conn.Open();
+
+        SqlCommand cmmd = NovoCmmd(procedure, conn);
+
+        AdicionarParametros(cmmd, parametros);
+
+        SqlDataReader dr = cmmd.ExecuteReader();
+
+        dt.BeginLoadData();
+        dt.Load(dr);
+        dt.EndLoadData();
+
+        dr.Close();
+        dr.Dispose();
+
+        cmmd.Dispose();
+
+        conn.Close();
+        conn.Dispose();
+
+        return dt;
     }
 
     private string GetNomeProcedure(string acao)
