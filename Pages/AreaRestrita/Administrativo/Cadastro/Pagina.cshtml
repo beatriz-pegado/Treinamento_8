@@ -1,0 +1,381 @@
+﻿@page
+@using System.Text.Json;
+
+@{
+    ViewData["Title"] = "Página";
+}
+
+@functions {
+
+    private enum View
+    {
+        Index,
+        New,
+        Edit
+    }
+
+    public class Pagina
+    {
+        public string IdPagina { get; set; }
+        public string IdModulo { get; set; }
+        public string IdSistema { get; set; }
+        public string Codigo { get; set; }
+        public string Caption { get; set; }
+        public string CodigoModulo { get; set; }
+        public string CaptionModulo { get; set; }
+        public string CaptionSistema { get; set; }
+        public bool Status { get; set; }
+    }
+
+    public class Modulo
+    {
+        public string IdModulo { get; set; }
+        public string Caption { get; set; }
+        public string CaptionSistema { get; set; }
+    }
+
+    public class Sistema
+    {
+        public string IdSistema { get; set; }
+        public string Caption { get; set; }
+    }
+
+    string acao = null;
+    string idPagina = null;
+    string idSistema = null;
+    string idModulo = null;
+    Pagina pagina = null;
+    View view = View.Index;
+    List<Pagina> paginas = null;
+    List<Modulo> modulos = new List<Modulo>();
+    List<Sistema> sistemas = null;
+    List<Botao> botoes = null;
+
+    private void AlimentaVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            acao = Util.ChecaNulo(Request.Form["acao"]);
+            idPagina = Util.ChecaNulo(Request.Form["idPagina"]);
+            idModulo = Util.ChecaNulo(Request.Form["idModulo"]);
+            idSistema = Util.ChecaNulo(Request.Form["idSistema"]);
+
+            if (!string.IsNullOrWhiteSpace(Request.Form["view"]))
+            {
+                view = (View)Enum.Parse(typeof(View), Request.Form["view"]);
+            }
+        }
+        botoes = new BotaoDao().GetAll();
+    }
+
+    private void LimpaVariaveis()
+    {
+        acao = null;
+        idPagina = null;
+        pagina = null;
+        idSistema = null;
+        idModulo = null;
+    }
+
+    private void ConsultarPaginas()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdPagina", idPagina);
+        parametros.Add("@IdSistema", idSistema);
+        parametros.Add("@IdModulo", idModulo);
+        parametros.Add("@TipoConsulta", 1);
+
+        paginas = new Dao().ExecutarAcaoList<Pagina>("C", parametros);
+    }
+    private void ConsultarModulos()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 2);
+        parametros.Add("@IdSistema", idSistema);
+
+        modulos = new Dao().ExecutarAcaoList<Modulo>("C", parametros);
+    }
+
+    private void ConsultarSistemas()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 3);
+
+        sistemas = new Dao().ExecutarAcaoList<Sistema>("C", parametros);
+    }
+
+    private void Manutencao()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdPagina", pagina.IdPagina);
+        parametros.Add("@IdModulo", pagina.IdModulo);
+        parametros.Add("@Codigo", pagina.Codigo);
+        parametros.Add("@Caption", pagina.Caption);
+        parametros.Add("@Status", pagina.Status);
+
+        new Dao().ExecutarAcao(acao, parametros);
+    }
+
+    private void CarregarDados()
+    {
+        if (view == View.Edit && acao == "C" && paginas != null && paginas.Count() == 1)
+        {
+            pagina = paginas.FirstOrDefault();
+            idSistema = pagina.IdSistema;
+            idModulo = pagina.IdModulo;
+        }
+    }
+}
+@{
+    AlimentaVariaveis();
+
+    if (acao == "I" || acao == "A" || acao == "E")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            if (HttpContext.Request.HasFormContentType)
+            {
+                pagina = new Pagina()
+                {
+                    IdPagina = Util.ChecaNulo(Request.Form["idPagina"]),
+                    IdModulo = Util.ChecaNulo(Request.Form["idModulo"]),
+                    Codigo = Util.ChecaNulo(Request.Form["codigo"]),
+                    Caption = Util.ChecaNulo(Request.Form["caption"]),
+                    Status = Request.Form["status"] == "1"
+                };
+            }
+            Manutencao();
+            view = View.Index;
+            LimpaVariaveis();
+            ModelState.AddModelError("alert-success", "Operação realizada com sucesso.");
+        }, this.ModelState);
+    }
+
+
+    Util.ExceptionHandler(() =>
+    {
+        ConsultarPaginas();
+        ConsultarSistemas();
+        if(acao == "C")
+        {
+            CarregarDados();
+        }
+        ConsultarModulos();
+
+    }, this.ModelState);
+
+
+    if (acao == "CM")
+    {
+        Layout = null;
+        string json = JsonSerializer.Serialize(modulos);
+        await Response.WriteAsync(json);
+
+        return;
+    }
+
+    if (pagina == null)
+    {
+        pagina = new Pagina();
+    }
+
+    if(modulos == null)
+    {
+        modulos = new List<Modulo>();
+    }
+}
+
+<body>
+    <form name="form1" method="post">
+
+        <input type="hidden" name="acao" id="acao" />
+        <input type="hidden" name="idPagina" id="idPagina" value="@idPagina" />
+        <input type="hidden" name="view" id="view" value="@((int)view)" />
+        @Html.AntiForgeryToken()
+        <div class="container mt-5 pt-5">
+            <div class="d-flex justify-content-between mt-3 mb-5">
+                <p class="h1">Página</p>
+
+                <div class="d-flex align-items-center ms-auto gap-2">
+
+                    @if (view == View.Index)
+                    {
+                        if (botoes.Any(x => x.Codigo == "I"))
+                        {
+                            <button class="btn btn-outline-primary" type="button" onclick="novo()">Novo</button>
+                        }
+                        <button class="btn btn-outline-primary" type="submit">Filtrar</button>
+                    }
+                    @if (view == View.New)
+                    {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "I" })
+                    }
+
+
+                    @if (view == View.Edit)
+                    {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "A" })
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "E" })
+                    }
+
+                    <button class="btn btn-outline-primary" type="submit" onclick="estadoInicial()">Limpar</button>
+                </div>
+            </div>
+
+            <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
+                @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+            </div>
+
+            <div class="d-flex gap-3">
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="idSistema">Sistema: </label> <br />
+                    <select class="form-select  @Util.IsInvalid("idSistema", this.ModelState)" name="idSistema" onchange="carregarModulos()">
+                        <option value="">Selecione um Sistema</option>
+
+                        @foreach (Sistema item in sistemas)
+                        {
+                            <!option @(item.IdSistema == idSistema ? "selected" : "")
+                                    value="@item.IdSistema">
+                                @item.Caption
+                            </!option>
+                        }
+                    </select>
+                    @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "idSistema")
+                </div>
+
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="idModulo">Modulo: </label> <br />
+                    <select class="form-select  @Util.IsInvalid("idModulo", this.ModelState)" name="idModulo">
+                        <option value="">Selecione um Modulo</option>
+
+                        @foreach (Modulo item in modulos)
+                        {
+                            <!option @(item.IdModulo == idModulo ? "selected" : "")
+                                    value="@item.IdModulo">
+                                @item.CaptionSistema - @item.Caption
+                            </!option>
+                        }
+                    </select>
+                    @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "idModulo")
+                </div>
+            </div>
+
+            @if (view == View.New || view == View.Edit)
+            {
+                <div class="input-group mb-3">
+                    <label class="input-group-text is-invalid">Código da Página: </label>
+                    <input class="form-control @Util.IsInvalid("codigo", this.ModelState)" type="text" name="codigo" id="codigo" value="@pagina.Codigo" />
+                    @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "codigo")
+                </div>
+
+                <div class="input-group mb-3">
+                    <label class="input-group-text is-invalid">Caption da Página: </label>
+                    <input class="form-control @Util.IsInvalid("caption", this.ModelState)" type="text" name="caption" id="caption" value="@pagina.Caption" />
+                    @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "caption")
+                </div>
+
+                <div class="d-flex gap-3 m-3 align-items-start input-group w-auto">
+                    <label class="form-check-label" for="status">Ativa: </label>
+                    <input class="form-check" type="checkbox" name="status" value="1" @(pagina.Status ? "checked" : "")>
+                    @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "status")
+                </div>
+            }
+
+            @if (view == View.Index)
+            {
+                <div class="table-wrapper table-responsive mt-4">
+                    <table class="table table-striped table-hover table-borderless table-scroll">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Sistema</th>
+                                <th>Código do Módulo</th>
+                                <th>Caption do Módulo</th>
+                                <th>Código da Página</th>
+                                <th>Caption da Página</th>
+                                <th>Status</th>
+                                @if (botoes.Any(x => x.Codigo == "A" || x.Codigo == "E"))
+                                {
+                                    <th></th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (Pagina item in paginas)
+                            {
+                                <tr>
+                                    <td>@item.IdPagina</td>
+                                    <td>@item.CaptionSistema</td>
+                                    <td>@item.CodigoModulo</td>
+                                    <td>@item.CaptionModulo</td>
+                                    <td>@item.Codigo</td>
+                                    <td>@item.Caption</td>
+                                    <td>@(item.Status ? "Ativo" : "Inativo")</td>
+                                    @if (botoes.Any(x => x.Codigo == "A" || x.Codigo == "E"))
+                                    {
+                                        <td><button class="btn btn-sm btn-primary js-setId" data-id="@item.IdPagina">Editar</button></td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </form>
+
+    <script>
+        function setId(idPagina) {
+            document.form1.idSistema.value = null;
+            document.form1.idModulo.value = null;
+            document.form1.view.value = "@((int)View.Edit)";
+            document.form1.idPagina.value = idPagina;
+
+            executarAcao('C');
+        }
+
+        function novo() {
+            document.form1.view.value = "@((int)View.New)";
+            executarAcao('C');
+        }
+
+        function adicionaEventos() {
+            Array.from(document.querySelectorAll('.js-setId')).forEach(function (item) {
+                item.addEventListener("click", function () {
+                    var id = this.getAttribute("data-id");
+                    setId(id);
+                });
+            });
+        }
+
+        function carregarModulos() {
+            var sistema = document.form1.idSistema.value;
+
+            $.ajax({
+                method: "POST",
+                url: "Pagina",
+                headers: {
+                    "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
+                },
+                data: { idSistema : sistema, acao : "CM" }
+            }).done(function (res) {
+                var modulos = JSON.parse(res);
+                var select = document.querySelector("select[name='idModulo']");
+
+                select.innerHTML = "<option value=''>Selecione um Modulo</option>";
+
+                modulos.forEach(function (m) {
+                    var opt = document.createElement("option");
+                    opt.value = m.IdModulo;
+                    opt.text = `${m.CaptionSistema} - ${m.Caption}`;
+                    select.appendChild(opt);
+                });
+            });
+        }
+
+        adicionaEventos();
+    </script>
+
+</body>
+
+
