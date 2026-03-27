@@ -105,6 +105,8 @@
     <form name="form1" method="post" class="min-vh-100 d-flex flex-column justify-content-center align-items-center bg-light">
         <input type="hidden" name="acao" value="@acao" />
 
+        @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+
         <div class="text-center mt-4 mx-4">
             <div class="navbar-brand pb-2">
                 <img class="mb-3" style="width: 35%;" src="~/img/logo_nova.png" />
