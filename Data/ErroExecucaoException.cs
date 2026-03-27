@@ -16,7 +16,7 @@ public class ErroExecucaoException : Exception
         foreach (SqlError item in erros)
         {
             // 3609 = Erro de trigger/transação abortada (apenas ignoramos)
-            if (item.Number == 3609) continue;
+            if (item.Number == 3609) return;
 
             if (item.Number == 50001)
             {
