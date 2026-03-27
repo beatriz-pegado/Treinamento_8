@@ -18,6 +18,8 @@ builder.Services.AddSession();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 builder.Services.AddTransient<IIdentificacao, Identificacao>();
+AppDomain.CurrentDomain.SetData("ContentRootPath", builder.Environment.ContentRootPath); 
+AppDomain.CurrentDomain.SetData("WebRootPath", builder.Environment.WebRootPath);
 
 var app = builder.Build();
 
@@ -31,7 +33,6 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
