@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
+/* 
+ * OBS: Essa versão não é a utilizada nos sistemas da LOG e foi feita apenas como teste utilizando TagHelpers. 
+ * A versão oficial dos helpers fica em \Pages\Shared\Helpers e não é feita utilizando TagHelpers, mas PartialViews.
+ */
 namespace Treinamento8_0.TagHelpers
 {
     // Substitui @PageHelper.MakeAlert()
