@@ -44,10 +44,11 @@
             idOperador = Util.ChecaNulo(Request.Form["idOperador"]);
 
             acoes = Util.ChecaNulo(Request.Form["idAcao"]);
-        }
-        if (!string.IsNullOrWhiteSpace(Request.Form["view"]))
-        {
-            view = (View)Enum.Parse(typeof(View), Request.Form["view"]);
+
+            if (!string.IsNullOrWhiteSpace(Request.Form["view"]))
+            {
+                view = (View)Enum.Parse(typeof(View), Request.Form["view"]);
+            }
         }
         botoes = new BotaoDao().GetAll();
     }
@@ -113,8 +114,6 @@
         <input type="hidden" name="acao" id="acao" />
         <input type="hidden" name="idAutorizacao" id="idAutorizacao" value="@idOperador" />
         <input type="hidden" name="view" id="view" value="@((int)view)" />
-
-        @*@RenderPage("~/AreaRestrita/Menu.cshtml")*@
 
     <div class="container mt-5 pt-5">
         <div class="d-flex justify-content-between mt-3 mb-5">
