@@ -1,0 +1,215 @@
+﻿@page
+@{
+    ViewData["Title"] = "Três Pontos";
+}
+
+<body>
+
+
+    <form name="form1" method="post">
+        <input type="hidden" name="acao" id="acao" />
+
+        @Html.AntiForgeryToken()
+
+        <div class="container">
+            <p class="h1  my-5">Modal e Três Pontos</p>
+
+            @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+
+            <div class="mt-5">
+                <label for="idTime">idTime</label>
+                <div class="d-flex gap-3">
+                    <div>
+                        <input type="text" id="idTime" name="idTime" class="form-control" data-group="group1" data-column="idTime" />
+                        @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "idTime")
+                    </div>
+                    <div>
+                        @await Html.PartialAsync("Shared/Helpers/_MakeModal", 
+                            new Treinamento8_0.Models.Modal {   
+                                group = "group1", 
+                                label = "Time", 
+                                tipoConsulta = "Time", 
+                                title = "Consulta de Times" 
+                            })
+                    </div>
+                    <div>
+                        <input type="text" id="nome" name="nome" class="form-control" data-group="group1" data-column="Nome" />
+                        @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "nome")
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <label for="idJogador">idJogador</label>
+                <div class="d-flex gap-3">
+                    <div>
+                        <input type="text" id="idJogador" name="idJogador" class="form-control" data-group="group2" data-column="idJogador" />
+                        @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "idJogador")
+                    </div>
+                    <div>
+                        @await Html.PartialAsync("Shared/Helpers/_MakeModal", 
+                            new Treinamento8_0.Models.Modal {   
+                                group = "group2", 
+                                label = "Jogador", 
+                                tipoConsulta = "Jogador", 
+                                title = "Consulta de Jogadores",
+                                consultaComposta = "idTime"
+                            })
+                    </div>
+                    <div>
+                        <input type="text" id="nome" name="nome" class="form-control" data-group="group2" data-column="Nome" />
+                        @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "nome")
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <script>
+        function openSearch(obj) {
+            if (!obj) return;
+
+            var group = findGroup(obj);
+
+            if (!group) return;
+
+            var search = document.querySelector(`[data-group="${group}"][class="search"]`);
+
+            if (!search) return;
+
+            var card = search.querySelector(".search-card");
+
+            if (!card) return;
+
+            card.classList.add("show");
+
+            initSearch(search);
+        }
+
+        function closeSearch(obj) {
+            if (!obj) return;
+
+            var group = findGroup(obj);
+
+            if (!group) return;
+
+            var search = document.querySelector(`[data-group="${group}"][class="search"]`);
+
+            if (!search) return;
+
+            var card = search.querySelector(".search-card");
+
+            if (!card) return;
+
+            card.classList.remove("show");
+
+            initSearch(search);
+        }
+
+        function initSearch(search) {
+            var chave = search.querySelector('[name="chave"]');
+
+            if (!chave) return;
+
+            chave.value = "";
+
+            var resultado = search.querySelector('.resultado');
+
+            if (!resultado) return;
+
+            resultado.innerHTML = "";
+        }
+
+        function makeSearch(obj) {
+            if (!obj) return;
+
+            var group = findGroup(obj);
+
+            if (!group) return;
+
+            var search = document.querySelector(`[data-group="${group}"][class="search"]`);
+
+            if (!search) return;
+
+            var chave = search.querySelector('[name="chave"]').value;
+            var tipoConsulta = search.getAttribute("data-tipo-consulta");
+            if (search.getAttribute("data-consulta-composta")) {
+                var consultaComposta = document.getElementById(search.getAttribute("data-consulta-composta")).value;
+            }
+            var resultado = search.querySelector('.resultado');
+
+            $.ajax({
+                method: "POST",
+                url: "/AreaRestrita/AuxConsulta",
+                dataType: "json",
+                headers: {
+                    "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
+                },
+                data: {
+                    chave: chave,
+                    tipoConsulta: tipoConsulta,
+                    consultaComposta: consultaComposta
+                }
+            }).done(function (res) {
+                if (res.length == 0) {
+                    resultado.innerHTML = "<div>Nenhum registro encontrado</div>";
+                } else {
+                    var table = populateTable(res);
+                    resultado.innerHTML = table;
+                }
+            });
+        }
+
+        function populateTable(json) {
+            var tablei = '<table class="table table-striped table-hover table-borderless table-scroll">';
+            var thead = populateTableHeader(json);
+            var tbody = populateTableBody(json);
+            var tablef = '</table>';
+
+            return tablei + thead + tbody + tablef;
+        }
+
+        function populateTableHeader(json) {
+            var columns = Object.keys(json[0]);
+            var headerCells = columns.map(r => {
+                return "<th>" + r + "</th>"
+            });
+
+            return "<thead><tr>" + headerCells.join('') + "</tr></thead>";
+        }
+
+        function populateTableBody(json) {
+            var columns = Object.keys(json[0]);
+            var results = json.map((r, index) => {
+                var row = "<tr onclick='fecharSearch(this)'>";
+                columns.forEach(function (key) {
+                    row += "<td data-column=" + key + ">" + r[key] + "</td>";
+                });
+                row += "</tr>";
+                return row;
+            });
+
+            return "<tbody>" + results.join('') + "</tbody>"
+        }
+
+        function fecharSearch(obj) {
+            var group = findGroup(obj);
+
+            if (!group) return;
+
+            document.querySelectorAll('[data-group=' + group + ']').forEach((item) => {
+                if (item instanceof HTMLInputElement) {
+                    item.value = obj.querySelector("[data-column=" + item.getAttribute("data-column") + "]").innerText;
+                }
+            });
+
+        }
+
+        function findGroup(obj) {
+            if (obj.classList.contains("search")) {
+                return obj.getAttribute("data-group");
+            }
+            return findGroup(obj.parentElement);
+        }
+    </script>
+</body>

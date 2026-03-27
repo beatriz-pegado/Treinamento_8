@@ -1,0 +1,349 @@
+﻿@page
+@{
+    ViewData["Title"] = "Consulta de Veículos";
+}
+
+@functions{
+
+    public class Transacao902
+    {
+        public string TipoTransacao { get; set; }
+        public string MensagemRetorno { get; set; }
+
+        public string InParteFixa { get; set; }
+        public string OutCodigoRetorno { get; set; }
+        public string OutIdentificacaoVeiculo { get; set; }
+        public string InPlacaUnica { get; set; }
+        public string OutCodigoRENAVAM { get; set; }
+        public string OutNomeSituacaoVeiculo { get; set; }
+        public string OutCodigoMunicipioEmplacamento { get; set; }
+        public string OutUF { get; set; }
+
+        public string OutTipoRemarcacaoChassi { get; set; }
+        public string OutNomeTipoMontagem { get; set; }
+        public string OutCodigoTipoVeiculo { get; set; }
+        public string OutCodigoMarcaModelo { get; set; }
+        public string OutCodigoEspecieveiculo { get; set; }
+        public string OutCodigoTipoCarroceria { get; set; }
+        public string OutCodigoCor { get; set; }
+        public string OutAnoModelo { get; set; }
+        public string OutAnoFabricacao { get; set; }
+
+        public string OutPotenciaVeiculo { get; set; }
+        public string OutCilindradas { get; set; }
+        public string OutCodigoCombustivel { get; set; }
+        public string OutNumeroMotor { get; set; }
+        public string OutCMTVeiculo { get; set; }
+        public string OutPBTVeiculo { get; set; }
+        public string OutCapacidadeCarga { get; set; }
+        public string OutNomeProcedenciaVeiculo { get; set; }
+        public string OutNumeroCaixaCambio { get; set; }
+        public string OutNumeroCarroceria { get; set; }
+        public string OutCapacidadePassageiros { get; set; }
+        public string OutNumeroEixos { get; set; }
+        public string OutNumeroEixoTraseiro { get; set; }
+        public string OutNumeroEixoAuxiliar { get; set; }
+
+        public string OutTipoDocumentoProprietario { get; set; }
+        public string OutNumeroIdentificacaoProprietario { get; set; }
+        public string OutTipoDocProprietarioIndicado { get; set; }
+        public string OutNumeroDocProprietarioIndicado { get; set; }
+
+        public string OutCodigoRestricao1 { get; set; }
+        public string OutCodigoRestricao2 { get; set; }
+        public string OutCodigoRestricao3 { get; set; }
+        public string OutCodigoRestricao4 { get; set; }
+
+        public string OutTipoDocumentoImportador { get; set; }
+        public string OutNumeroIdentificacaoImportador { get; set; }
+        public string OutCodigoOrgaoRFB { get; set; }
+        public string OutNumeroREDA { get; set; }
+        public string OutNumeroDI { get; set; }
+        public string OutDataRegistroDI { get; set; }
+        public string OutTipoDocumentoFaturado { get; set; }
+        public string OutNumeroIdentificacaoFaturado { get; set; }
+        public string OutUFDestinoFaturamento { get; set; }
+        public string OutDataLimiteRestricaoTributaria { get; set; }
+        public string OutTipoOperacaoImportacaoveiculo { get; set; }
+        public string OutNumeroProcessoImportacao { get; set; }
+        public string OutDataBaixaTranfOutroPais { get; set; }
+        public string OutCodigoPaisTransf { get; set; }
+
+        public string OutDataUltimaAtualizacao { get; set; }
+        public string OutIndicatorMultaExigivelRENAINF { get; set; }
+        public string OutIndicadorComunicacaoVenda { get; set; }
+        public string OutIndicadorPendenciaEmissao { get; set; }
+        public string OutIndicadorRestricaoRENAJUD { get; set; }
+        public string OutIndicadorOcorrenciaRecall1 { get; set; }
+        public string OutIndicadorOcorrenciaRecall2 { get; set; }
+        public string OutIndicadorOcorrenciaRecall3 { get; set; }
+        public string OutIndicadorRecallMontadora { get; set; }
+        public string OutCodigoCategoriaVeiculoMRE { get; set; }
+        public string OutDataUltimaAtualizacaoMRE { get; set; }
+        public string OutIndicadorEmplacamentoEletronico { get; set; }
+        public string OutOrigemIndicacaoPropriedade { get; set; }
+        public string OutIndicadorRestricaoRFB { get; set; }
+        public string OutIndicadorPlacaVeicular { get; set; }
+        public string OutIndicadorRestricoes { get; set; }
+    }
+
+    string acao = null;
+    string placa = null;
+    Transacao902 transacao = null;
+
+    string GerarReguaNumeros(int tamanho)
+    {
+        string linha = "";
+        for (int i = 1; i <= tamanho; i++)
+        {
+            linha += (i % 10).ToString();
+        }
+        return linha;
+    }
+
+    string GerarReguaDezenas(int tamanho)
+    {
+        if (tamanho <= 0) return "";
+
+        char[] linha = new string(' ', tamanho).ToCharArray();
+
+        for (int i = 1; i <= tamanho; i++)
+        {
+            if (i % 10 == 0)
+            {
+                string dezena = (i / 10).ToString();
+
+                linha[i - 1] = dezena[dezena.Length - 1];
+            }
+        }
+        return new string(linha);
+    }
+
+    string GerarReguaCentenas(int tamanho)
+    {
+        if (tamanho <= 0) return "";
+
+        char[] linha = new string(' ', tamanho).ToCharArray();
+
+        for (int i = 1; i <= tamanho; i++)
+        {
+            if (i % 100 == 0)
+            {
+                string centena = (i / 100).ToString();
+
+                linha[i - 1] = centena[centena.Length - 1];
+            }
+        }
+        return new string(linha);
+    }
+
+    private void AlimentaVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            acao = Util.ChecaNulo(Request.Form["acao"]);
+            placa = Util.ChecaNulo(Request.Form["inPlaca"]);
+        }
+    }
+
+    private void LimpaVariaveis()
+    {
+        acao = null;
+        placa = null;
+        transacao = null;
+    }
+    private void Consultar()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@Placa", placa);
+
+        transacao = new Dao().ExecutarAcaoList<Transacao902>("C", parametros).FirstOrDefault();
+    }
+}
+
+@{
+    AlimentaVariaveis();
+    if (acao == "C")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            Consultar();
+
+        }, this.ModelState);
+    }
+}
+
+<body>
+
+    <form name="form1" method="post">
+        <input type="hidden" name="acao" id="acao" />
+
+        <div class="container">
+            <p class="h1 my-5">Consulta de Veículos</p>
+
+            <div class="d-flex gap-2">
+                <div class="flex-grow-1">
+                    <input type="text" name="inPlaca" id="inPlaca" class="form-control" placeholder="Buscar veículo por placa" value="@placa" />
+                </div>
+
+                <button class="btn btn-outline-primary" type="submit" onclick="estadoInicial()">Limpar</button>
+                <button class="btn btn-outline-primary" type="submit" onclick="executarAcao('C')">Placa (902)</button>
+
+            </div>
+            <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
+                @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+            </div>
+            @if (transacao != null)
+            {
+                if (transacao.TipoTransacao == "RT02")
+                {
+                    <div class="my-2 mx-2"><label>Parte Fixa:</label> <p id="inParteFixa" class="fw-bold">@transacao.InParteFixa</p></div>
+                    <div class="card mt-2">
+                        <div class='d-flex p-3 flex-wrap'>
+                            <div class="col-md-3 border-end">
+                                <h6><i class="bi bi-card-list"></i> Identificação</h6>
+                                <hr>
+                                <div class="mb-2"><label>Cód. Retorno:</label> <p id="outCodigoRetorno">@transacao.OutCodigoRetorno</p></div>
+                                <div class="mb-2"><label>Placa:</label> <p id="inPlacaUnica">@transacao.InPlacaUnica</p></div>
+                                <div class="mb-2"><label>RENAVAM:</label> <p id="outCodigoRENAVAM">@transacao.OutCodigoRENAVAM</p></div>
+                                <div class="mb-2"><label>Marca/Modelo:</label> <p id="outCodigoMarcaModelo">@transacao.OutCodigoMarcaModelo</p></div>
+                                <div class="mb-2">
+                                    <label>UF/Município:</label>
+                                    <p><span id="outUF">@transacao.OutUF</span> / <span id="outCodigoMunicipioEmplacamento">@transacao.OutCodigoMunicipioEmplacamento</span></p>
+                                </div>
+                                <div class="mb-2"><label>Situação:</label> <p id="outNomeSituacaoVeiculo">@transacao.OutNomeSituacaoVeiculo</p></div>
+                            </div>
+
+                            <div class="col-md-3 border-end px-3">
+                                <h6><i class="bi bi-gear"></i> Mecânica e Pesos</h6>
+                                <hr>
+                                <div class="mb-2">
+                                    <label>Ano Fab/Mod:</label>
+                                    <p><span id="outAnoFabricacao">@transacao.OutAnoFabricacao</span> / <span id="outAnoModelo">@transacao.OutAnoModelo</span></p>
+                                </div>
+                                <div class="mb-2"><label>Combustível:</label> <p id="outCodigoCombustivel">@transacao.OutCodigoCombustivel</p></div>
+                                <div class="mb-2"><label>Cor:</label> <p id="outCodigoCor">@transacao.OutCodigoCor</p></div>
+                                <div class="mb-2"><label>Motor:</label> <p id="outNumeroMotor">@transacao.OutNumeroMotor</p></div>
+                                <div class="mb-2">
+                                    <label>Potência/Cilindrada:</label>
+                                    <p><span id="outPotenciaVeiculo">@transacao.OutPotenciaVeiculo</span> cv / <span id="outCilindradas">@transacao.OutCilindradas</span> cc</p>
+                                </div>
+                                <div class="mb-2">
+                                    <label>PBT/Cap. Carga:</label>
+                                    <p><span id="outPBTVeiculo">@transacao.OutPBTVeiculo</span> / <span id="outCapacidadeCarga">@transacao.OutCapacidadeCarga</span></p>
+                                </div>
+                                <div class="mb-2">
+                                    <label>Nº Eixos (T/A):</label>
+                                    <p>
+                                        <span id="outNumeroEixos">@transacao.OutNumeroEixos</span>
+                                        (T:<span id="outNumeroEixoTraseiro">@transacao.OutNumeroEixoTraseiro</span> / A:<span id="outNumeroEixoAuxiliar">@transacao.OutNumeroEixoAuxiliar</span>)
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 border-end px-3">
+                                <h6><i class="bi bi-person"></i> Proprietário / Registro</h6>
+                                <hr>
+                                <div class="mb-2">
+                                    <label>Doc. Proprietário:</label>
+                                    <p>(<span id="outTipoDocumentoProprietario">@transacao.OutTipoDocumentoProprietario</span>) <span id="outNumeroIdentificacaoProprietario">@transacao.OutNumeroIdentificacaoProprietario</span></p>
+                                </div>
+                                <div class="mb-2">
+                                    <label>Prop. Indicado:</label>
+                                    <p>(<span id="outTipoDocProprietarioIndicado">@transacao.OutTipoDocProprietarioIndicado</span>) <span id="outNumeroDocProprietarioIndicado">@transacao.OutNumeroDocProprietarioIndicado</span></p>
+                                </div>
+                                <div class="mb-2">
+                                    <label>Chassi/Carroceria:</label>
+                                    <p id="outIdentificacaoVeiculo">@transacao.OutIdentificacaoVeiculo</p>
+                                    <p id="outNumeroCarroceria">@transacao.OutNumeroCarroceria</p>
+                                </div>
+                                <div class="mb-2"><label>Data Últ. Atualiz.:</label> <p id="outDataUltimaAtualizacao">@transacao.OutDataUltimaAtualizacao</p></div>
+                                <div class="mb-2"><label>Data MRE:</label> <p id="outDataUltimaAtualizacaoMRE">@transacao.OutDataUltimaAtualizacaoMRE</p></div>
+                            </div>
+
+                            <div class="col-md-3 px-3">
+                                <h6><i class="bi bi-exclamation-triangle"></i> Restrições e Alertas</h6>
+                                <hr>
+                                <div class="mb-1">
+                                    <small>RENAJUD:</small>
+                                    <span id="outIndicadorRestricaoRENAJUD" class="badge @(transacao.OutIndicadorRestricaoRENAJUD == "S" ? "bg-danger" : "bg-secondary")">
+                                        @transacao.OutIndicadorRestricaoRENAJUD
+                                    </span>
+                                </div>
+                                <div class="mb-1">
+                                    <small>Comun. Venda:</small>
+                                    <span id="outIndicadorComunicacaoVenda" class="badge bg-secondary">@transacao.OutIndicadorComunicacaoVenda</span>
+                                </div>
+                                <div class="mb-1">
+                                    <small>Multa RENAINF:</small>
+                                    <span id="outIndicatorMultaExigivelRENAINF" class="badge bg-secondary">@transacao.OutIndicatorMultaExigivelRENAINF</span>
+                                </div>
+                                <div class="mb-1">
+                                    <small>Recall (1/2/3):</small>
+                                    <span id="outIndicadorOcorrenciaRecall1">@transacao.OutIndicadorOcorrenciaRecall1</span> |
+                                    <span id="outIndicadorOcorrenciaRecall2">@transacao.OutIndicadorOcorrenciaRecall2</span> |
+                                    <span id="outIndicadorOcorrenciaRecall3">@transacao.OutIndicadorOcorrenciaRecall3</span>
+                                </div>
+                                <hr>
+                                <h6><i class="bi bi-ship"></i> Importação / RFB</h6>
+                                <div class="mb-2">
+                                    <small>DI:</small>
+                                    <span id="outNumeroDI">@transacao.OutNumeroDI</span>
+                                    (<span id="outDataRegistroDI">@transacao.OutDataRegistroDI</span>)
+                                </div>
+                                <div class="mb-2"><small>Órgão RFB:</small> <span id="outCodigoOrgaoRFB">@transacao.OutCodigoOrgaoRFB</span></div>
+                                <div class="mb-2"><small>Restrição RFB:</small> <span id="outIndicadorRestricaoRFB">@transacao.OutIndicadorRestricaoRFB</span></div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                if (transacao.TipoTransacao == "RT01")
+                {
+                    <div class="card my-5 p-3 container">
+                        <p class="text-danger">Nenhum veículo encontrado com a placa informada.</p>
+                        <div><label>Parte Fixa:</label> <p id="inParteFixa" class="fw-bold">@transacao.InParteFixa</p></div>
+                        <div><label>Cód. Retorno:</label> <p id="outCodigoRetorno">@transacao.OutCodigoRetorno</p></div>
+                    </div>
+                }
+
+                <div class="card my-5 p-3">
+                    <h6>Mensagem envio</h6>
+                    <hr />
+                    <div class="container">
+                        <pre class="text-danger">         1         2         3         4</pre>
+                        <pre class="text-danger">12345678901234567890123456789012345678901234</pre>
+                        <pre>@(transacao.InParteFixa)@(placa)</pre>
+                    </div>
+                </div>
+
+                <div class="card my-5 p-3">
+                    <h6>Mensagem Retorno (@transacao.TipoTransacao)</h6>
+                    <hr />
+
+                    <div class="container"
+                         style="overflow-x: auto;">
+
+                        @{
+                            string mensagemExibir = (transacao.TipoTransacao == "RT01"
+                                ? (transacao.InParteFixa + transacao.OutCodigoRetorno)
+                                : transacao.MensagemRetorno);
+
+                            int totalTamanho = mensagemExibir?.Length ?? 0;
+                        }
+
+                        <div style="white-space: nowrap;">
+                            <pre class="text-danger m-0 d-inline">@GerarReguaCentenas(totalTamanho)</pre><br />
+                            <pre class="text-danger m-0 d-inline">@GerarReguaDezenas(totalTamanho)</pre><br />
+                            <pre class="text-danger m-0 d-inline">@GerarReguaNumeros(totalTamanho)</pre><br />
+                            <pre class="m-0 d-inline">@mensagemExibir</pre>
+                        </div>
+
+                    </div>
+                </div>
+            }
+
+        </div>
+
+    </form>
+</body>
