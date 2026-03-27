@@ -38,6 +38,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEFkbWluaXN0cmF0aXZvXENhZGFzdHJvXFNpc3RlbWEuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Administrativo/Relatorio/ConsultaAcessos.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEFkbWluaXN0cmF0aXZvXFJlbGF0b3Jpb1xDb25zdWx0YUFjZXNzb3MuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Administrativo/Relatorio/ConsultaAlteracao.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEFkbWluaXN0cmF0aXZvXFJlbGF0b3Jpb1xDb25zdWx0YUFsdGVyYWNhby5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -66,12 +70,48 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEF1eENvbnN1bHRhQWx0ZXJhY2FvLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/AuxPaginacao.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEF1eFBhZ2luYWNhby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/AuxPaginacaoAcao.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEF1eFBhZ2luYWNhb0FjYW8uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/AuxPapel.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEF1eFBhcGVsLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Copa/Cadastro/Jogador.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXENvcGFcQ2FkYXN0cm9cSm9nYWRvci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Copa/Cadastro/Jogo.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXENvcGFcQ2FkYXN0cm9cSm9nby5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Copa/Cadastro/Participacao.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXENvcGFcQ2FkYXN0cm9cUGFydGljaXBhY2FvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Copa/Cadastro/Time.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXENvcGFcQ2FkYXN0cm9cVGltZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Copa/Relatorio/Aproveitamento.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXENvcGFcUmVsYXRvcmlvXEFwcm92ZWl0YW1lbnRvLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Copa/Relatorio/Artilharia.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXENvcGFcUmVsYXRvcmlvXEFydGlsaGFyaWEuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Copa/Relatorio/Classificacao.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXENvcGFcUmVsYXRvcmlvXENsYXNzaWZpY2FjYW8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Copa/Relatorio/Confronto.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXENvcGFcUmVsYXRvcmlvXENvbmZyb250by5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Extrato/ConsultarJogador.cshtml]
@@ -84,6 +124,18 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Extrato/Extrato.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEV4dHJhdG9cRXh0cmF0by5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Extra/Relatorio/Paginacao.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEV4dHJhXFJlbGF0b3Jpb1xQYWdpbmFjYW8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Extra/Relatorio/Transacao902.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEV4dHJhXFJlbGF0b3Jpb1xUcmFuc2FjYW85MDIuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Extra/Relatorio/TresPontos.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXJlYVJlc3RyaXRhXEV4dHJhXFJlbGF0b3Jpb1xUcmVzUG9udG9zLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/12196847402/source/repos/Treinamento8_0/Pages/AreaRestrita/Index.cshtml]
