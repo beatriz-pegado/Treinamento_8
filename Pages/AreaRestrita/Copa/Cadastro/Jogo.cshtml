@@ -1,0 +1,572 @@
+﻿@page
+
+@{
+    ViewData["Title"] = "Jogo";
+}
+
+@using System.Globalization
+@using PathIO = System.IO.Path
+@using FileIO = System.IO.File
+@using DirectoryIO = System.IO.Directory
+
+@functions {
+    private enum View
+    {
+        Index,
+        New,
+        Edit,
+        AddFile
+    }
+
+    private class Jogo
+    {
+        public string IdJogo { get; set; }
+        public string sumula { get; set; }
+        public string IdTime1 { get; set; }
+        public string NomeTime1 { get; set; }
+        public string IdTime2 { get; set; }
+        public string NomeTime2 { get; set; }
+        public string Placar1 { get; set; }
+        public string Placar2 { get; set; }
+        public string DataInicio { get; set; }
+        public string DataFim { get; set; }
+        public decimal ValorPartida { get; set; }
+    }
+
+    public class Time
+    {
+        public string IdTime { get; set; }
+        public string Nome { get; set; }
+    }
+
+    public class Sumula
+    {
+        public string IdSumula { get; set; }
+        public string IdJogo { get; set; }
+        public string Nome { get; set; }
+    }
+
+    string acao = null;
+    string idJogo = null;
+    string extensoesValidas = ".pdf";
+    string nomeArquivo = null;
+    string webRoot = null;
+    string caminhoArquivos = null;
+
+    bool erro = false;
+    IFormFile arquivo = null;
+    Jogo jogo = null;
+    View view = View.Index;
+    List<Time> times = null;
+
+    List<Jogo> jogos = null;
+    List<Botao> botoes = null;
+    List<Sumula> sumulas = null;
+
+    private void AlimentaVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            acao = Util.ChecaNulo(Request.Form["acao"]);
+            idJogo = Util.ChecaNulo(Request.Form["idJogo"]);
+            nomeArquivo = Util.ChecaNulo(Request.Form["nomeArquivo"]);
+            if (!string.IsNullOrWhiteSpace(Request.Form["view"]))
+            {
+                view = (View)Enum.Parse(typeof(View), Request.Form["view"]);
+            }
+
+            if (Request.Form.Files.Count > 0)
+            {
+                arquivo = Request.Form.Files["arquivo"];
+            }
+        }
+        botoes = new BotaoDao().GetAll();
+        webRoot = AppDomain.CurrentDomain.GetData("WebRootPath")?.ToString();
+        caminhoArquivos = (webRoot != null) ? PathIO.Combine(webRoot, "arquivos") : string.Empty;
+    }
+    private void LimpaVariaveis()
+    {
+        acao = null;
+        idJogo = null;
+        jogo = null;
+    }
+    private void ConsultarJogos()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@idJogo", idJogo);
+
+        jogos = new Dao().ExecutarAcaoList<Jogo>("C", parametros);
+    }
+
+    private void ConsultarTimes()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 2);
+
+        times = new Dao().ExecutarAcaoList<Time>("C", parametros);
+    }
+
+    private void ConsultarArquivos()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdJogo", idJogo);
+
+        sumulas = new Dao().ExecutarAcaoList<Sumula>("CS", parametros);
+    }
+
+    private void Manutencao()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdJogo", Util.ChecaNulo(jogo.IdJogo));
+        parametros.Add("@IdTime1", Util.ChecaNulo(jogo.IdTime1));
+        parametros.Add("@IdTime2", Util.ChecaNulo(jogo.IdTime2));
+        parametros.Add("@DataInicio", Util.ChecaNulo(jogo.DataInicio));
+        parametros.Add("@DataFim", Util.ChecaNulo(jogo.DataFim));
+        parametros.Add("@ValorPartida", Convert.ToDecimal(Util.ChecaNulo(jogo.ValorPartida.ToString("N2", new CultureInfo("pt-BR")))));
+
+        new Dao().ExecutarAcao(acao, parametros);
+    }
+
+    private void ManutencaoArquivo()
+    {
+        if (string.IsNullOrEmpty(nomeArquivo) && !string.IsNullOrEmpty(arquivo.FileName))
+        {
+            nomeArquivo = arquivo.FileName;
+        }
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdJogo", Util.ChecaNulo(idJogo));
+        parametros.Add("@Nome", Util.ChecaNulo(nomeArquivo));
+
+        new Dao().ExecutarAcao(acao, parametros);
+    }
+
+    private void CarregarDados()
+    {
+        if (view == View.Edit && acao == "C" && jogos != null && jogos.Count() == 1)
+        {
+            jogo = jogos.FirstOrDefault();
+            jogo.DataInicio = Util.FormatarData(jogo.DataInicio, 23) + "T" + Util.FormatarData(jogo.DataInicio, 108);
+            jogo.DataFim = Util.FormatarData(jogo.DataFim, 23) + "T" + Util.FormatarData(jogo.DataFim, 108);
+            jogo.ValorPartida = decimal.Parse(Util.ConverterMoeda(jogo.ValorPartida, "pt-BR"));
+        }
+    }
+
+    private void SalvarArquivo()
+    {
+        ManutencaoArquivo();
+
+        if (arquivo == null)
+        {
+            throw new InvalidOperationException("Informe o arquivo.");
+        }
+        if (string.IsNullOrEmpty(arquivo.FileName))
+        {
+            throw new InvalidOperationException("Não foi possível identificar o nome do arquivo.");
+        }
+        if (arquivo.Length > 512 * 1000)
+        {
+            ModelState.AddModelError("arquivo", "O arquivo deve ter até 512KB.");
+            erro = true;
+        }
+
+        // Monta o caminho completo combinando
+        string caminhoPasta = PathIO.Combine(webRoot, "arquivos", idJogo);
+
+
+        if (!DirectoryIO.Exists(caminhoPasta))
+        {
+            DirectoryIO.CreateDirectory(caminhoPasta);
+        }
+
+        if (!erro)
+        {
+            string caminhoArquivo = PathIO.Combine(caminhoPasta, arquivo.FileName);
+
+            // Salva o arquivo
+            using (System.IO.Stream fileStream = new System.IO.FileStream(caminhoArquivo, System.IO.FileMode.Create))
+            {
+                arquivo.CopyTo(fileStream);
+            }
+        }
+    }
+
+    private void ExcluirArquivo()
+    {
+        ManutencaoArquivo();
+
+        if (nomeArquivo != null)
+        {
+            string webRoot = AppDomain.CurrentDomain.GetData("WebRootPath").ToString();
+
+            string caminhoArquivo = PathIO.Combine(webRoot, "arquivos", idJogo, nomeArquivo);
+
+            if (FileIO.Exists(caminhoArquivo))
+            {
+                FileIO.Delete(caminhoArquivo);
+            }
+        }
+    }
+}
+@{
+    AlimentaVariaveis();
+
+    if (acao == "I" || acao == "A" || acao == "E")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            if (HttpContext.Request.HasFormContentType)
+            {
+                jogo = new Jogo()
+                {
+                    IdJogo = Util.ChecaNulo(Request.Form["idJogo"]),
+                    IdTime1 = Util.ChecaNulo(Request.Form["idTime1"]),
+                    IdTime2 = Util.ChecaNulo(Request.Form["idTime2"]),
+                    NomeTime1 = Util.ChecaNulo(Request.Form["NomeTime1"]),
+                    NomeTime2 = Util.ChecaNulo(Request.Form["NomeTime2"]),
+                    DataInicio = Util.ChecaNulo(Request.Form["dataInicio"]),
+                    DataFim = Util.ChecaNulo(Request.Form["dataFim"]),
+                    ValorPartida = Convert.ToDecimal(Util.ChecaNulo(Request.Form["valorPartida"]))
+                };
+            }
+            Manutencao();
+            view = View.Index;
+            LimpaVariaveis();
+            ModelState.AddModelError("alert-success", "Operação realizada com sucesso.");
+        }, this.ModelState);
+    }
+
+    if (view == View.AddFile)
+    {
+        ConsultarArquivos();
+    }
+
+    if (acao == "IS")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            SalvarArquivo();
+
+            view = View.Index;
+            LimpaVariaveis();
+            if (!erro)
+            {
+                ModelState.AddModelError("alert-success", "Operação realizada com sucesso.");
+            }
+        }, this.ModelState);
+    }
+
+    if (acao == "ES")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            ExcluirArquivo();
+
+            view = View.Index;
+            LimpaVariaveis();
+            ModelState.AddModelError("alert-success", "Operação realizada com sucesso.");
+        }, this.ModelState);
+    }
+
+    Util.ExceptionHandler(() =>
+    {
+        ConsultarJogos();
+        ConsultarTimes();
+        CarregarDados();
+    }, this.ModelState);
+
+    if (jogo == null)
+    {
+        jogo = new Jogo();
+    }
+}
+
+<body>
+    <form name="form1" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="acao" id="acao" />
+        <input type="hidden" name="idJogo" id="idJogo" value="@idJogo" />
+        <input type="hidden" name="view" id="view" value="@((int)view)" />
+        <input type="hidden" name="nomeArquivo" id="nomeArquivo" />
+
+
+        <div class="container mt-5 pt-5">
+            <div class="d-flex justify-content-between mt-3 mb-5">
+                @if (view == View.AddFile)
+                {
+                    <p class="h1">Jogo (#@(idJogo))</p>
+                }
+                else
+                {
+                    <p class="h1">Jogos</p>
+                }
+
+                <div class="d-flex align-items-center ms-auto gap-2">
+
+                    @if (view == View.Index)
+                    {
+                        if (botoes.Any(x => x.Codigo == "I"))
+                        {
+                            <button class="btn btn-outline-primary" type="button" onclick="novo()">Novo</button>
+                        }
+                    }
+
+                    @if (view == View.New)
+                    {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "I" })
+                    }
+                    @if (view == View.Edit)
+                    {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "A" })
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "E" })
+                    }
+                    <button class="btn btn-outline-primary" type="submit" onclick="estadoInicial()">Limpar</button>
+                </div>
+            </div>
+
+            <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
+                @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+            </div>
+            @if (view == View.New || view == View.Edit)
+            {
+                <div class="d-flex gap-5 mb-3">
+                    <div class="input-group mb-3">
+                        <label class="input-group-text" for="Time1">Time 1 </label>
+                        <select class="form-select @Util.IsInvalid("idTime2", this.ModelState)" name="idTime1">
+                            <option value="">Selecione um time</option>
+
+                            @foreach (Time item in times)
+                            {
+                                <!option @(item.IdTime == jogo.IdTime1 ? "selected" : "") value="@item.IdTime">
+                                @item.Nome
+                                </!option>
+                            }
+                        </select>
+                        @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "idTime1")
+                    </div>
+                    <div class="input-group mb-3">
+                        <label class="input-group-text" for="Time2">Time 2 </label>
+                        <select class="form-select @Util.IsInvalid("idTime2", this.ModelState)" name="idTime2">
+                            <option value="">Selecione um time</option>
+
+                            @foreach (Time item in times)
+                            {
+                                <!option @(item.IdTime == jogo.IdTime2 ? "selected" : "") value="@item.IdTime">
+                                @item.Nome
+                                </!option>
+                            }
+                        </select>
+                        @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "idTime2")
+                    </div>
+                </div>
+
+                <div class="d-flex gap-5 mb-3">
+                    <div class="input-group mb-3">
+                        <label class="input-group-text" for="dataInicio">Data de início</label>
+                        <input type="datetime-local" class="form-control @Util.IsInvalid("dataInicio", this.ModelState)" name="dataInicio" value="@jogo.DataInicio" />
+                        @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "dataInicio")
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <label class="input-group-text" for="dataFim">Data de término</label>
+                        <input type="datetime-local" class="form-control @Util.IsInvalid("dataFim", this.ModelState)" name="dataFim" value="@jogo.DataFim" />
+                        @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "dataFim")
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <label class="input-group-text" for="valorPartida">Valor da Partida: </label>
+                        <input class="form-control @Util.IsInvalid("valorPartida", this.ModelState) money" type="text" name="valorPartida" id="valorPartida" value="@jogo.ValorPartida" />
+                        @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "valorPartida")
+                    </div>
+
+                </div>
+            }
+
+            @if (view == View.Index)
+            {
+                <div>
+                    @if (jogos != null)
+                    {
+                        <div class="table-wrapper table-responsive">
+                            <table class="table table-striped table-hover table-borderless table-scroll">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Time 1</th>
+                                        <th>Placar</th>
+                                        <th>Time 2</th>
+                                        <th>Data de Início</th>
+                                        <th>Data de Término</th>
+                                        <th>Valor da Partida</th>
+                                        @if (botoes.Any(x => x.Codigo == "A" || x.Codigo == "E"))
+                                        {
+                                            <th></th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (Jogo item in jogos)
+                                    {
+                                        <tr>
+                                            <td>@(item.IdJogo == idJogo ? item.IdJogo + " <" : item.IdJogo)</td>
+                                            <td>@item.NomeTime1</td>
+                                            <td>@item.Placar1 x @item.Placar2</td>
+                                            <td>@item.NomeTime2</td>
+                                            <td>@Util.FormatarData(item.DataInicio, 103) @Util.FormatarData(item.DataInicio, 108)</td>
+                                            <td>@Util.FormatarData(item.DataFim, 103) @Util.FormatarData(item.DataInicio, 108)</td>
+                                            <td>@Util.ConverterMoeda(item.ValorPartida, "pt-BR")</td>
+
+                                            <td class=" d-flex gap-3">
+                                                @if (botoes.Any(x => x.Codigo == "A" || x.Codigo == "E"))
+                                                {
+                                                    <button class="btn btn-sm btn-primary js-setId" data-id="@item.IdJogo">Editar</button>
+
+                                                }
+
+                                                @if (botoes.Any(x => x.Codigo == "CS"))
+                                                {
+                                                    <button class="btn btn-sm btn-primary js-addSumula" data-id="@item.IdJogo">Visualizar Súmula</button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (view == View.AddFile)
+            {
+
+                <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
+                    @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+                </div>
+                if (botoes.Any(x => x.Codigo == "IS"))
+                {
+
+                    <div class="d-flex justify-content-between mt-5 mb-5">
+                        <p class="h3">Anexar Súmula</p>
+                    </div>
+
+                    <div class="mt-5">
+                        <div class="row">
+                            <div class="col-auto input-group">
+                                <input type="file" id="arquivo" name="arquivo" class="form-control @Util.IsInvalid("arquivo", this.ModelState)" onchange="checkfile(this)" />
+                                <button type="button" class="btn btn-sm btn-primary" onclick="enviar()">Enviar Arquivo</button>
+                                @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "arquivo")
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <div class="small text-muted">Extensões válidas: @extensoesValidas</div>
+                            <div class="small text-muted">Tamanho máximo do arquivo: 512kb</div>
+                        </div>
+                    </div>
+                }
+
+                if (sumulas != null && !string.IsNullOrEmpty(caminhoArquivos) && DirectoryIO.Exists(caminhoArquivos))
+                {
+                    <p class="h3 my-5">Arquivos</p>
+                    <div class="list-group list-group-flush">
+                        @foreach (Sumula item in sumulas)
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>@item.Nome</div>
+                                    <div class="d-flex gap-3">
+                                        <i class="bi bi-download"></i>
+                                        <a href="~/arquivos/@item.IdJogo/@item.Nome" target="_blank">
+                                            <i class="fa-solid fa-download fs-4"></i>
+                                        </a>
+                                        @if (botoes.Any(x => x.Codigo == "A" || x.Codigo == "E"))
+                                        {
+                                            <a href="javascript:void(0)" onclick="excluirArquivo('@item.Nome')">
+                                                <i class="fa-solid fa-trash fs-4"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+
+            }
+        </div>
+    </form>
+
+    @section scripts{
+        <script>
+            function setId(idJogo) {
+                document.form1.view.value = "@((int)View.Edit)";
+                document.form1.idJogo.value = idJogo;
+                executarAcao('C');
+            }
+
+            function adicionaSumula(idJogo) {
+                document.form1.view.value = "@((int)View.AddFile)";
+                document.form1.idJogo.value = idJogo;
+                executarAcao('');
+            }
+
+            function adicionaEventos() {
+                Array.from(document.querySelectorAll('.js-setId')).forEach(function (item) {
+                    item.addEventListener("click", function () {
+                        var id = this.getAttribute("data-id");
+                        setId(id);
+                    });
+                });
+
+
+                Array.from(document.querySelectorAll('.js-addSumula')).forEach(function (item) {
+                    item.addEventListener("click", function () {
+                        var id = this.getAttribute("data-id");
+                        adicionaSumula(id);
+                    });
+
+                });
+            }
+            function novo() {
+                document.form1.view.value = "@((int)View.New)";
+                executarAcao('');
+            }
+
+            function checkfile(input) {
+                const extensoesValidas = "@extensoesValidas".toUpperCase().split(",");
+                const extensaoArquivo = input.value.substring(input.value.lastIndexOf("."));
+
+                if (extensoesValidas.indexOf(extensaoArquivo.toUpperCase()) < 0) {
+                    alert("Formato de arquivo inválido. Extensões aceitas: " + extensoesValidas);
+                    input.value = "";
+                    return false;
+                }
+
+                return true;
+            }
+
+            function enviar(){
+                var arquivo = document.form1.arquivo.value;
+
+                if (!arquivo) {
+                    alert("Informe o arquivo.");
+                    return;
+                }
+
+                document.form1.acao.value = "IS";
+                document.form1.submit();
+            }
+
+            function excluirArquivo(nomeArquivo) {
+                document.form1.acao.value = "ES";
+                document.form1.nomeArquivo.value = nomeArquivo;
+                document.form1.submit();
+            }
+
+            adicionaEventos();
+        </script>
+    }
+
+</body>
+
+

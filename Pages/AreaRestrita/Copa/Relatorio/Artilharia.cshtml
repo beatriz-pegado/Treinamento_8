@@ -1,0 +1,88 @@
+﻿@page
+
+@{
+    ViewData["Title"] = "Artilharia";
+}
+
+@functions {
+    private class Artilharia
+    {
+        public String Nome { get; set; }
+        public String NomeTime { get; set; }
+        public String GolsMarcados { get; set; }
+    }
+    string nome = null;
+    string golsMarcados = null;
+    List<Artilharia> artilheiros = null;
+
+    private void AlimentaVariaveis()
+    {
+        nome = Util.ChecaNulo(Request.Form["nome"]);
+        golsMarcados = Util.ChecaNulo(Request.Form["golsMarcados"]);
+    }
+
+    private void Consultar()
+    {
+        artilheiros = new Dao().ExecutarAcaoList<Artilharia>("C", null);
+    }
+}
+@{
+    Util.ExceptionHandler(() =>
+    {
+        AlimentaVariaveis();
+        Consultar();
+    }, this.ModelState);
+}
+@section head {
+    <link href="~/Scripts/Style.css" rel="stylesheet">
+}
+
+<body>
+    <form name="form1" method="post">
+
+        <div class="container mt-5 pt-5">
+            <div class="d-flex justify-content-between mt-3 mb-5">
+                <p class="h1">Artilharia</p>
+                @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+            </div>
+
+            <div class="mb-3">
+                @if (artilheiros != null)
+                {
+                    <div class="table-wrapper table-responsive">
+                        <table class="table table-striped table-hover table-borderless table-scroll">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Nome</th>
+                                    <th>Gols Marcados</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (Artilharia item in artilheiros)
+                                {
+                                    <tr>
+                                        <td>@item.NomeTime</td>
+                                        <td>@item.Nome</td>
+                                        <td>@item.GolsMarcados </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </form>
+
+    <script>
+        function executarAcao(acao) {
+            document.form1.acao.value = acao;
+            document.form1.submit();
+        }
+
+    </script>
+
+</body>
+
+

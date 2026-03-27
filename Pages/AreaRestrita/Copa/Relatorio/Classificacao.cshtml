@@ -1,0 +1,111 @@
+﻿@page
+
+@{
+    ViewData["Title"] = "Classificacao";
+}
+
+@functions {
+    private class Classificacao
+    {
+        public String Nome { get; set; }
+        public String Pontos { get; set; }
+        public String SaldoGols { get; set; }
+        public String GolsMarcados { get; set; }
+    }
+
+    string acao = null;
+    string nome = null;
+    string pontos = null;
+    string saldoGols = null;
+    string golsMarcados = null;
+    List<Classificacao> classificacoes = null;
+
+    private void AlimentaVariaveis()
+    {
+        acao = Util.ChecaNulo(Request.Form["acao"]);
+        nome = Util.ChecaNulo(Request.Form["nome"]);
+        pontos = Util.ChecaNulo(Request.Form["pontos"]);
+        saldoGols = Util.ChecaNulo(Request.Form["saldoGols"]);
+        golsMarcados = Util.ChecaNulo(Request.Form["golsMarcados"]);
+    }
+
+    private void Consultar()
+    {
+        classificacoes = new Dao().ExecutarAcaoList<Classificacao>("C", null);
+    }
+
+    private string GetNomeProcedure(string acao)
+    {
+        switch (acao)
+        {
+            case "C": return "stp_ABP_Classificacao_Sel";
+            default:
+                return null;
+        }
+    }
+
+}
+@{
+    Util.ExceptionHandler(() =>
+    {
+        AlimentaVariaveis();
+        Consultar();
+    }, this.ModelState);
+}
+@section head {
+    <link href="~/Scripts/Style.css" rel="stylesheet">
+}
+
+<body>
+    <form name="form1" method="post">
+        <input type="hidden" name="acao" id="acao" />
+
+        <div class="container mt-5 pt-5">
+            <div class="d-flex justify-content-between mt-3 mb-5">
+                <p class="h1">Classificação</p>
+                @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+            </div>
+
+            <div class="mb-3">
+                @if (classificacoes != null)
+                {
+                    <div class="table-wrapper table-responsive">
+                        <table class="table table-striped table-hover table-borderless table-scroll">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Pontos</th>
+                                    <th>Saldo de Gols</th>
+                                    <th>Gols Marcados</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (Classificacao item in classificacoes)
+                                {
+                                    <tr>
+                                        <td>@item.Nome</td>
+                                        <td>@item.Pontos</td>
+                                        <td>@item.SaldoGols</td>
+                                        <td>@item.GolsMarcados </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+        </div>
+    </form>
+
+    <script>
+        function executarAcao(acao) {
+            document.form1.acao.value = acao;
+            document.form1.submit();
+        }
+
+    </script>
+
+</body>
+
+

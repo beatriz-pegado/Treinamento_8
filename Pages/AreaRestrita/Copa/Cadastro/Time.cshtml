@@ -1,0 +1,235 @@
+﻿@page
+
+@{
+    ViewData["Title"] = "Time";
+}
+
+@functions {
+
+    private enum View
+    {
+        Index,
+        New,
+        Edit
+    }
+
+    public class Time
+    {
+        public string IdTime { get; set; }
+        public string Nome { get; set; }
+    }
+
+    string idSessao = null;
+    string acao = null;
+    string idTime = null;
+    Time time = null;
+    View view = View.Index;
+    List<Time> times = null;
+
+    List<Botao> botoes = null;
+
+    private void AlimentaVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            idSessao = Convert.ToString(HttpContext.Session.GetString("idSessao"));
+            acao = Util.ChecaNulo(Request.Form["acao"]);
+            idTime = Util.ChecaNulo(Request.Form["idTime"]);
+
+            if (!string.IsNullOrWhiteSpace(Request.Form["view"]))
+            {
+                view = (View)Enum.Parse(typeof(View), Request.Form["view"]);
+            }
+        }
+        botoes = new BotaoDao().GetAll();
+    }
+
+    private void LimpaVariaveis()
+    {
+        acao = null;
+        idTime = null;
+        time = null;
+    }
+
+    private void Consultar()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdTime", idTime);
+        parametros.Add("@IdSessao", idSessao);
+
+        times = new Dao().ExecutarAcaoList<Time>("C", parametros);
+    }
+
+    private void Manutencao()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdTime", time.IdTime);
+        parametros.Add("@Nome", time.Nome);
+        parametros.Add("@IdSessao", idSessao);
+
+        new Dao().ExecutarAcao(acao, parametros);
+    }
+
+    private void CarregarDados()
+    {
+        if (view == View.Edit && acao == "C" && times != null && times.Count == 1)
+        {
+            time = times.FirstOrDefault();
+        }
+    }
+}
+@{
+    AlimentaVariaveis();
+
+    if (acao == "I" || acao == "A" || acao == "E")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            if (HttpContext.Request.HasFormContentType)
+            {
+                time = new Time()
+                {
+                    IdTime = Util.ChecaNulo(Request.Form["idTime"]),
+                    Nome = Util.ChecaNulo(Request.Form["nome"])
+                };
+            }
+            Manutencao();
+            view = View.Index;
+            LimpaVariaveis();
+            ModelState.AddModelError("alert-success", "Operação realizada com sucesso.");
+        }, this.ModelState);
+    }
+
+    // Como só usaremos a função Consultar, que não tem parâmetros, podemos simplificar da seguinte forma:
+    // Util.ExceptionHandler(Consultar, this.ModelState);
+    Util.ExceptionHandler(() =>
+    {
+        Consultar();
+        CarregarDados();
+
+    }, this.ModelState);
+
+    if (time == null)
+    {
+        time = new Time();
+    }
+}
+@section head {
+    <link href="~/Scripts/Style.css" rel="stylesheet">
+}
+<body>
+    <form name="form1" method="post">
+        <input type="hidden" name="acao" id="acao" />
+        <input type="hidden" name="idTime" id="idTime" value="@idTime" />
+        <input type="hidden" name="view" id="view" value="@((int)view)" />
+
+        <div class="container mt-5 pt-5">
+            <div class="d-flex justify-content-between mt-5 mb-5">
+                <p class="h1">Times</p>
+
+                <div class="d-flex align-items-center ms-auto gap-2">
+                    <!--botao azul  class="btn btn-sm btn-primary"-->
+                    @if (view == View.Index)
+                    {
+                        if (botoes.Any(x => x.Codigo == "I"))
+                        {
+                            <button class="btn btn-outline-primary" type="button" onclick="novo()">Novo</button>
+                        }
+                    }
+                    @if (view == View.New)
+                    {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "I" })
+                    }
+
+
+                    @if (view == View.Edit)
+                    {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "A" })
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "E" })
+                    }
+
+                    <button class="btn btn-outline-primary" type="submit" onclick="estadoInicial()">Limpar</button>
+                </div>
+            </div>
+
+            <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
+                @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+            </div>
+
+            @if (view == View.New || view == View.Edit)
+            {
+                <div class="input-group mb-3">
+                    <label class="input-group-text is-invalid" for="idTime">Nome do Time: </label>
+                    <input class="form-control @Util.IsInvalid("nome", this.ModelState)" type="text" name="nome" id="nome" value="@time.Nome" />
+                    @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "nome")
+                </div>
+            }
+
+            @if (view == View.Index)
+            {
+                <div>
+                    @if (times != null)
+                    {
+                        <div class="table-wrapper table-responsive">
+                            <table class="table table-striped table-hover table-borderless table-scroll">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nome</th>
+                                        @if (botoes.Any(x => x.Codigo == "A" || x.Codigo == "E"))
+                                        {
+                                            <th>Ação</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (Time time in times)
+                                    {
+                                        <tr>
+                                            <td>@time.IdTime</td>
+                                            <td>@time.Nome</td>
+                                            @if (botoes.Any(x => x.Codigo == "A" || x.Codigo == "E"))
+                                            {
+                                                <td><button class="btn btn-sm btn-primary js-setId" data-idTime="@time.IdTime">Editar</button></td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            }
+
+        </div>
+    </form>
+
+    <script src="~/Scripts/Scripts.js"></script>
+
+    <script>
+        function adicionaEventos() {
+            Array.from(document.querySelectorAll('.js-setId')).forEach(function (item) {
+                item.addEventListener("click", function () {
+                    var id = this.getAttribute("data-idTime");
+                    setTime(id);
+                });
+            });
+        }
+
+        function setTime(idTime) {
+            document.form1.view.value = "@((int)View.Edit)";
+            document.form1.idTime.value = idTime;
+            executarAcao('C');
+        }
+
+        function novo() {
+            document.form1.view.value = "@((int)View.New)";
+            executarAcao('');
+        }
+
+        adicionaEventos();
+    </script>
+
+</body>
+
+

@@ -1,0 +1,445 @@
+﻿@page
+
+@{
+    ViewData["Title"] = "Jogador";
+}
+
+@using System.Globalization;
+
+@functions {
+    private enum View
+    {
+        Index,
+        New,
+        Edit,
+        EditJogadores
+    }
+
+    public enum TipoJogador
+    {
+        Jogador = 'J',
+        Capitao = 'C',
+        Tecnico = 'T'
+    }
+    public class Jogador
+    {
+        public string IdJogador { get; set; }
+        public string Nome { get; set; }
+        public string IdTime { get; set; }
+        public string NomeTime { get; set; }
+        public decimal Salario { get; set; }
+        public char Tipo { get; set; }
+        public bool Suspenso { get; set; }
+    }
+
+    public class Time
+    {
+        public string IdTime { get; set; }
+        public string Nome { get; set; }
+    }
+
+    string acao = null;
+    string idJogador = null;
+    string idTimeSelecionado = null;
+    string idSessao = null;
+    Jogador jogador = null;
+
+    View view = View.Index;
+    List<Time>
+    times = null;
+
+    List<Jogador>
+    jogadores = null;
+
+    List<Botao> botoes = null;
+    string jogadoresSuspensos = null;
+    string idCapitao = null;
+    string idTecnico = null;
+
+    private string MontaJogador(Jogador jogador)
+    {
+        string nome = ((jogador.Tipo != (char)TipoJogador.Jogador) ? $"[{jogador.Tipo}] {jogador.Nome}" : jogador.Nome);
+
+        return (jogador.Suspenso ? (@"<s class=""text-danger""'>" + nome + "</s>") : nome);
+    }
+
+    private void AlimentaVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            acao = Util.ChecaNulo(Request.Form["acao"]);
+            idJogador = Util.ChecaNulo(Request.Form["idJogador"]);
+            idTimeSelecionado = Util.ChecaNulo(Request.Form["idTimeSelecionado"]);
+            jogadoresSuspensos = Util.ChecaNulo(Request.Form["suspenso"]);
+            idCapitao = Util.ChecaNulo(Request.Form["capitao"]);
+            idTecnico = Util.ChecaNulo(Request.Form["tecnico"]);
+            
+            if (!string.IsNullOrWhiteSpace(Request.Form["view"]))
+            {
+                view = (View)Enum.Parse(typeof(View), Request.Form["view"]);
+            }
+        }
+        idSessao = Convert.ToString(HttpContext.Session.GetString("idSessao"));
+        botoes = new BotaoDao().GetAll();
+    }
+
+    private void LimpaVariaveis()
+    {
+        acao = null;
+        idJogador = null;
+        jogador = null;
+        idTimeSelecionado = null;
+    }
+    private void Consultar()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@idJogador", idJogador);
+        parametros.Add("@IdSessao", idSessao);
+        if (!string.IsNullOrEmpty(idTimeSelecionado))
+        {
+            parametros.Add("idTime", idTimeSelecionado);
+        }
+
+        jogadores = new Dao().ExecutarAcaoList<Jogador>("C", parametros);
+    }
+
+    // Criado novo método de consulta apenas para times
+    private void ConsultarTime()
+    {
+        Dictionary<string, object>
+        parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 1);
+        parametros.Add("@IdSessao", idSessao);
+
+        times = new Dao().ExecutarAcaoList<Time>("C", parametros);
+    }
+
+    private void Manutencao()
+    {
+        Dictionary<string, object>
+        parametros = new Dictionary<string, object>();
+        parametros.Add("IdJogador", jogador.IdJogador);
+        parametros.Add("@IdTime", jogador.IdTime);
+        parametros.Add("@Nome", jogador.Nome);
+        parametros.Add("@Salario", jogador.Salario);
+        parametros.Add("@Suspenso", jogador.Suspenso);
+        parametros.Add("@Tipo", jogador.Tipo);
+        parametros.Add("@IdSessao", idSessao);
+
+        new Dao().ExecutarAcao(acao, parametros);
+    }
+
+    private void ManutencaoMultiplosJogadores()
+    {
+        Dictionary<string, object>
+        parametros = new Dictionary<string, object>();
+        parametros.Add("Suspensos", jogadoresSuspensos);
+        parametros.Add("IdCapitao", idCapitao);
+        parametros.Add("IdTecnico", idTecnico);
+        parametros.Add("IdTime", idTimeSelecionado);
+        parametros.Add("@IdSessao", idSessao);
+
+        new Dao().ExecutarAcao(acao, parametros);
+    }
+
+    private void CarregarDados()
+    {
+        if (view == View.Edit && acao == "C" && jogadores != null && jogadores.Count() == 1)
+        {
+            jogador = jogadores.FirstOrDefault();
+        }
+    }
+}
+@{
+    AlimentaVariaveis();
+
+    if (acao == "I" || acao == "A" || acao == "E")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            jogador = new Jogador()
+            {
+                IdJogador = Util.ChecaNulo(Request.Form["idJogador"]),
+                Nome = Util.ChecaNulo(Request.Form["nome"]),
+                IdTime = Util.ChecaNulo(Request.Form["idTime"]),
+                Salario = decimal.Parse(Util.ChecaNulo(Request.Form["salario"]), new CultureInfo("pt-BR")),
+                Suspenso = Request.Form["suspenso"] == "1",
+                Tipo = Convert.ToChar(Request.Form["tipoJogador"])
+            };
+
+            Manutencao();
+            view = View.Index;
+            LimpaVariaveis();
+            ModelState.AddModelError("alert-success", "Operação realizada com sucesso.");
+        }, this.ModelState);
+
+    }
+
+    if (acao == "EJ")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            ManutencaoMultiplosJogadores();
+            view = View.Index;
+            LimpaVariaveis();
+            ModelState.AddModelError("alert-success", "Operação realizada com sucesso.");
+        }, this.ModelState);
+    }
+
+    Util.ExceptionHandler(() =>
+    {
+        Consultar();
+        CarregarDados();
+        ConsultarTime();
+    }, this.ModelState);
+
+    if (jogador == null)
+    {
+        jogador = new Jogador();
+    }
+}
+@section head {
+    <link href="~/Scripts/Style.css" rel="stylesheet">
+}
+<body>
+    <form name="form1" method="post">
+        <input type="hidden" name="acao" id="acao" />
+        <input type="hidden" name="idJogador" id="idJogador" value="@idJogador" />
+        <input type="hidden" name="view" id="view" value="@((int)view)" />
+
+
+        @*@RenderPage("~/AreaRestrita/Menu.cshtml")*@
+
+        <div class="container mt-5 pt-5">
+            <div class="d-flex justify-content-between mt-3 mb-5">
+                <p class="h1">Jogadores</p>
+
+                <div class="d-flex align-items-center ms-auto gap-2">
+
+                    @if (view == View.Index)
+                    {
+                        if (botoes.Any(x => x.Codigo == "I"))
+                        {
+                            <button class="btn btn-outline-primary" type="button" onclick="novo()">Novo</button>
+                        }
+
+                        <button class="btn btn-outline-primary" type="button" onclick="editarJogadores()">Editar Jogadores</button>
+                    }
+
+                    @if (view == View.New)
+                    {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "I" })
+                    }
+                    @if (view == View.Edit)
+                    {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "A" })
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "E" })
+                    }
+                    @if (view == View.EditJogadores)
+                    {
+                        @await Html.PartialAsync("Shared/Helpers/_BotaoHelper", new Treinamento8_0.Models.BotaoModel { Lista = botoes, Acao = "EJ" })
+                    }
+
+                    <button class="btn btn-outline-primary" type="submit" onclick="estadoInicial()">Limpar</button>
+                </div>
+            </div>
+
+            <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
+                @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+            </div>
+
+            @if (view == View.Index || view == View.EditJogadores)
+            {
+                <div class="input-group mb-5">
+                    <label class="input-group-text" for="Time">Time: </label>
+                    <select class="form-select @Util.IsInvalid("idTimeSelecionado", this.ModelState)" name="idTimeSelecionado" onchange="this.form.submit()">
+                        <option value="">Selecione um time</option>
+                        @if (times != null)
+                        {
+                            foreach (Time item in times)
+                            {
+                                <!option @(item.IdTime == idTimeSelecionado ? "selected" : "") value="@item.IdTime">
+                                    @item.Nome
+                                </!option>
+                            }
+                        }
+                    </select>
+                            @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "idTimeSelecionado")
+                </div>
+            }
+
+            @if (view == View.New || view == View.Edit)
+            {
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="IdJogador">Nome do Jogador: </label>
+                    <input class="form-control @Util.IsInvalid("nome", this.ModelState)" type="text" name="nome" id="nome" value="@jogador.Nome" />
+                    @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "nome")
+                </div>
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="salario">Salário do Jogador: </label>
+                    <input class="form-control money" type="text" name="salario" id="salario"
+                           value="@jogador.Salario.ToString("N2", new System.Globalization.CultureInfo("pt-BR"))" />
+                    @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "salario")
+                </div>
+
+                <div class="input-group mb-3">
+                    <label class="input-group-text" for="Time">Time: </label>
+                    <select class="form-select @Util.IsInvalid("idTime", this.ModelState)" name="idTime">
+                        <option value="">Selecione um time</option>
+                        @if (times != null)
+                        {
+                            foreach (Time item in times)
+                            {
+                                <!option @(item.IdTime == jogador.IdTime ? "selected" : "") value="@item.IdTime">
+                                    @item.Nome
+                                </!option>
+                            }
+                        }
+                    </select>
+                    @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "idTime")
+                </div>
+
+                <div class="d-flex justify-content-evenly">
+                    <div class="d-flex flex-column gap-2 m-3">
+                        <p>Tipo do Jogador:</p>
+                        <div>
+                            <input type="radio" name="tipoJogador" value="@((char)TipoJogador.Jogador)" @((jogador.Tipo == (char)TipoJogador.Jogador) ? "checked" : "")>
+                            <label for="tipoJogador">Jogador</label>
+                        </div>
+                        <div>
+                            <input type="radio" name="tipoJogador" value="@((char)TipoJogador.Capitao)" @(jogador.Tipo == (char)TipoJogador.Capitao ? "checked" : "")>
+                            <label for="tipoJogador">Capitão</label>
+                        </div>
+                        <div>
+                            <input type="radio" name="tipoJogador" value="@((char)TipoJogador.Tecnico)" @(jogador.Tipo == (char)TipoJogador.Tecnico ? "checked" : "")>
+                            <label for="tipoJogador">Técnico</label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 m-3 align-items-start input-group w-auto">
+                        <label class="form-check-label" for="suspenso">O Jogador está suspenso? </label>
+                        <input class="form-check" type="checkbox" name="suspenso" value="1" @(jogador.Suspenso ? "checked" : "")>
+                        @await Html.PartialAsync("Shared/Helpers/_MakeFeedback", "suspenso")
+                    </div>
+                </div>
+
+
+            }
+            @if (view == View.Index)
+            {
+                <div>
+                    @if (jogadores != null)
+                    {
+                        <div class="table-wrapper table-responsive">
+                            <table class="table table-striped table-hover table-borderless table-scroll">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nome do Time</th>
+                                        <th>Nome</th>
+                                        <th>Salário</th>
+                                        @if (botoes.Any(x => x.Codigo == "A" || x.Codigo == "E"))
+                                        {
+                                            <th></th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (Jogador item in jogadores)
+                                    {
+                                        <tr>
+                                            <td>@item.IdJogador</td>
+                                            <td>@item.NomeTime</td>
+                                            <td>
+                                                @Html.Raw(MontaJogador(item))
+                                            </td>
+                                            <td>@Util.ConverterMoeda(item.Salario, "pt-BR")</td>
+                                            @if (botoes.Any(x => x.Codigo == "A" || x.Codigo == "E"))
+                                            {
+                                                <td><button class="btn btn-sm btn-primary js-setIdJogador" data-id="@item.IdJogador">Editar</button></td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (view == View.EditJogadores)
+            {
+                <div>
+                    @if (jogadores != null)
+                    {
+                        if (!string.IsNullOrEmpty(idTimeSelecionado))
+                        {
+                            <div class="table-wrapper table-responsive">
+                                <table class="table table-striped table-hover table-borderless table-scroll">
+                                    <thead>
+                                        <tr>
+                                            <th>Capitão</th>
+                                            <th>Técnico</th>
+                                            <th>Suspenso</th>
+                                            <th>Nome</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (Jogador item in jogadores)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <input type="radio" name="capitao" value="@item.IdJogador" @(item.Tipo == (char)TipoJogador.Capitao ? "checked" : "")>
+                                                </td>
+                                                <td>
+                                                    <input type="radio" name="tecnico" value="@item.IdJogador" @(item.Tipo == (char)TipoJogador.Tecnico ? "checked" : "")>
+                                                </td>
+                                                <td>
+                                                    <input class="form-check" type="checkbox" name="suspenso" value="@item.IdJogador" @(item.Suspenso ? "checked" : "")>
+                                                </td>
+                                                <td>
+                                                    @Html.Raw(MontaJogador(item))
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+        </div>
+    </form>
+    <script src="~/Scripts/Scripts.js"></script>
+    <script>
+        function novo(){
+            document.form1.view.value = "@((int)View.New)";
+            executarAcao('');
+        }
+
+        function editarJogadores() {
+            document.form1.view.value = "@((int)View.EditJogadores)";
+            executarAcao('');
+        }
+
+        function adicionaEventos() {
+            Array.from(document.querySelectorAll('.js-setIdJogador')).forEach(function (item) {
+                item.addEventListener("click", function () {
+                    var id = this.getAttribute("data-id");
+                    setIdJogador(id);
+                });
+            });
+        }
+
+        function setIdJogador(idJogador) {
+            document.form1.view.value = "@((int)View.Edit)";
+            document.form1.idJogador.value = idJogador;
+            executarAcao('C');
+        }
+        adicionaEventos();
+    </script>
+
+</body>
+
+

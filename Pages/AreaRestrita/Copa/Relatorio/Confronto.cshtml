@@ -1,0 +1,235 @@
+﻿@page
+
+@{
+    ViewData["Title"] = "Time x Time";
+}
+
+@functions{
+
+    public class Time
+    {
+        public string idTime { get; set; }
+        public string NomeTime { get; set; }
+    }
+
+    public class Confronto
+    {
+        public string IdTime1 { get; set; }
+        public string NomeTime1 { get; set; }
+        public string IdTime2 { get; set; }
+        public string NomeTime2 { get; set; }
+        public string Sigla { get; set; }
+    }
+
+    string acao = null;
+
+    List<Confronto> confrontos = null;
+    string confrontosSelecionados = null;
+    List<Time> times = null;
+    List<Botao> botoes;
+
+    private void AlimentaVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            acao = Util.ChecaNulo(Request.Form["acao"]);
+            confrontosSelecionados = Util.ChecaNulo(Request.Form["confrontosSelecionados"]);
+        }
+    }
+
+    private void Consultar()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 0);
+        confrontos = new Dao().ExecutarAcaoList<Confronto>("C", parametros);
+    }
+
+    private void ConsultarTimes()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 1);
+        times = new Dao().ExecutarAcaoList<Time>("C", parametros);
+    }
+
+    private void Manutencao()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("confrontosSelecionados", RemoveDuplicatas(confrontosSelecionados));
+        new Dao().ExecutarAcao(acao, parametros);
+    }
+
+    private void LimpaVariaveis()
+    {
+        acao = null;
+    }
+
+    private bool OcorreuConfronto(string i, string j)
+    {
+        foreach (Confronto confronto in confrontos)
+        {
+            if (((i + "E" + j) == confronto.Sigla) || ((j + "E" + i) == confronto.Sigla))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private string RemoveDuplicatas(string confrontos)
+    {
+        if (string.IsNullOrEmpty(confrontos))
+            return string.Empty;
+
+        HashSet<string> set = new HashSet<string>();
+        List<string> resultado = new List<string>();
+
+        foreach (string confronto in confrontos.Split(','))
+        {
+            string[] ids = confronto.Split('E');
+
+            string id1 = ids[0].Trim();
+            string id2 = ids[1].Trim();
+
+            string chaveNormalizada = (string.Compare(id1, id2) < 0) ? id1 + "E" + id2 : id2 + "E" + id1;
+
+            if (!set.Contains(chaveNormalizada))
+            {
+                set.Add(chaveNormalizada);
+                resultado.Add(chaveNormalizada);
+            }
+        }
+
+        return string.Join(",", resultado);
+    }
+}
+
+@{
+    AlimentaVariaveis();
+
+    if (acao == "A")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            Manutencao();
+            LimpaVariaveis();
+            ModelState.AddModelError("alert-success", "Operação realizada com sucesso.");
+        }, this.ModelState);
+    }
+
+    Util.ExceptionHandler(() =>
+    {
+        Consultar();
+        ConsultarTimes();
+
+    }, this.ModelState);
+}
+
+
+<body>
+
+    <form method="POST" name="form1" id="form1">
+        <input type="hidden" name="acao" id="acao" />
+
+        <div class="container mt-5 pt-5">
+            <div class="d-flex justify-content-between mt-3 mb-5">
+                <p class="h1">Confrontos</p>
+                <div class="d-flex align-items-center ms-auto gap-2">
+                    <button class="btn btn-outline-primary" type="submit" onclick="estadoInicial()">Limpar</button>
+                    <button class="btn btn-outline-primary js-save" type="button">Salvar</button>
+                </div>
+            </div>
+
+
+
+            <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
+                @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+            </div>
+
+
+            @if (times != null && confrontos != null)
+            {
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            @foreach (Time item in times)
+                            {
+                                <th>@item.NomeTime</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (Time linha in times)
+                        {
+                            <tr>
+                                <td><strong>@linha.NomeTime</strong></td>
+
+                                @foreach (Time coluna in times)
+                                {
+                                    if (linha.idTime != coluna.idTime)
+                                    {
+                                        bool ocorreu = OcorreuConfronto(linha.idTime, coluna.idTime);
+                                        string chave = linha.idTime + "E" + coluna.idTime;
+
+                                        <td class="js-celula @(ocorreu ? "ocorreu" : "")"
+                                            data-i="@linha.idTime"
+                                            data-j="@coluna.idTime"
+                                            style="background-color:@(ocorreu ? "green" : "red");"
+                                            data-chave="@chave">
+
+                                            <input type="checkbox"
+                                                   name="confrontosSelecionados"
+                                                   value="@chave"
+                                                   @(ocorreu ? "checked" : "") 
+                                                   hidden/>
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                        <td></td>
+                                    }
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </form>
+</body>
+
+@section scripts {
+    <script>
+        function alternarCelula(i, j) {
+            var celula = $('.js-celula[data-i="' + i + '"][data-j="' + j + '"]');
+            var checkbox = celula.find('input[type="checkbox"]');
+            // Se ocorreu, torna vermelho
+            if (celula.hasClass("ocorreu")) {
+                celula.removeClass("ocorreu")
+                    .css("background-color", "red");
+                checkbox.prop("checked", false);
+            } else {
+                celula.addClass("ocorreu")
+                    .css("background-color", "green");
+                checkbox.prop("checked", true);
+            }
+        }
+
+        function adicionaEventos() {
+            $(document).on("click", ".js-celula", function () {
+                var celula = $(this);
+                var id1 = celula.data("i");
+                var id2 = celula.data("j");
+
+                alternarCelula(id1, id2);
+                alternarCelula(id2, id1);
+            });
+
+            $(document).on("click", ".js-save", function () {
+                executarAcao("A");
+            });
+        }
+
+        adicionaEventos();
+    </script>
+}

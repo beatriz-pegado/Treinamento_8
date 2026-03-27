@@ -1,0 +1,159 @@
+﻿@page
+
+@{
+    ViewData["Title"] = "Aproveitamentos";
+}
+
+@using System.Text.Json
+
+@functions {
+    private class TimeJson
+    {
+        public int IdTime { get; set; }
+        public string NomeTime { get; set; }
+        public List<JogadorJson> jogadores { get; set; }
+
+        public int QtdGols { get; set; }
+        public decimal Aproveitamento { get; set; }
+        public decimal Folha { get; set; }
+    }
+
+    private class JogadorJson
+    {
+
+        public int IdJogador { get; set; }
+        public string NomeJogador { get; set; }
+        public decimal Salario { get; set; }
+        public char Tipo { get; set; }
+        public bool Suspenso { get; set; }
+        public int QtdGols { get; set; }
+        public decimal Aproveitamento { get; set; }
+    }
+
+    public class ResultadoJson
+    {
+        public string Json { get; set; }
+    }
+
+    public enum TipoJogador
+    {
+        Jogador = 'J',
+        Capitao = 'C',
+        Tecnico = 'T'
+    }
+
+    List<TimeJson> times = null;
+    List<JogadorJson> jogadores = null;
+    List<TimeJson> aproveitamentos = null;
+    string timesJson = null;
+    string aproveitamentosJson = null;
+    ResultadoJson json = null;
+    private string MontaJogador(JogadorJson jogador)
+    {
+        string nome = ((jogador.Tipo != (char)TipoJogador.Jogador) ? $"[{jogador.Tipo}] {jogador.NomeJogador}" : jogador.NomeJogador);
+
+        return (jogador.Suspenso ? (@"<s class=""text-danger""'>" + nome + "</s>") : nome);
+    }
+
+    private void ConsultaTimes()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 0);
+
+        json = new Dao().ExecutarProcedureList<ResultadoJson>("stp_ABP_Aproveitamento_Sel", parametros).FirstOrDefault();
+
+        times = JsonSerializer.Deserialize<List<TimeJson>>(json.Json);
+    }
+
+    private void ConsultarAproveitamento()
+    {
+
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 1);
+        parametros.Add("@Json", JsonSerializer.Serialize(times));
+
+        json = new Dao().ExecutarProcedureList<ResultadoJson>("stp_ABP_Aproveitamento_Sel", parametros).FirstOrDefault();
+
+        aproveitamentos = JsonSerializer.Deserialize<List<TimeJson>>(json.Json);
+    }
+}
+@{
+    ConsultaTimes();
+    ConsultarAproveitamento();
+
+    timesJson = JsonSerializer.Serialize(times);
+    aproveitamentosJson = JsonSerializer.Serialize(aproveitamentos);
+
+}
+@section head {
+    <link href="~/Scripts/Style.css" rel="stylesheet">
+}
+
+<body>
+    <form name="form1" method="post">
+
+        <div class="container mt-5 pt-5">
+            <div class="d-flex flex-column justify-content-between mt-3 mb-5">
+                <div class="d-flex justify-content-between align-items-center">
+                    <p class="h1 mb-4">Relatório de Aproveitamentos</p>
+                    <button type="button" onclick="window.print()" class="btn btn-outline-primary" id="btn_Imprimir">Imprimir</button>
+                </div>
+                @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+
+                @if (aproveitamentos != null)
+                {
+                    foreach (TimeJson item in aproveitamentos)
+                    {
+                        <div>
+                            <p class="h3 my-4">@item.NomeTime [ QtdGols: @(item.QtdGols), Aproveitamento: @(item.Aproveitamento), Folha: @(Util.ConverterMoeda(item.Folha, "pt-BR")) ]</p>
+
+                            <div class="table-wrapper table-responsive">
+                                <table class="table table-striped table-hover table-borderless table-scroll">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Nome</th>
+                                            <th>Salário</th>
+                                            <th>Quantidade de Gols</th>
+                                            <th>Aproveitamento</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (JogadorJson j in item.jogadores)
+                                        {
+                                            <tr>
+                                                <td>@j.IdJogador</td>
+                                                <td>
+                                                    @Html.Raw(MontaJogador(j))
+                                                </td>
+                                                <td>@(Util.ConverterMoeda(j.Salario, "pt-BR"))</td>
+                                                <td>@(j.Tipo == (char)TipoJogador.Tecnico ? "--" : j.QtdGols)</td>
+                                                <td>@(j.Tipo == (char)TipoJogador.Tecnico ? "--" :j.Aproveitamento)</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="container debug-json">
+            <p class="my-5">@timesJson</p>
+            <p class="my-5">@aproveitamentosJson</p>
+        </div>
+    </form>
+
+    <script>
+        function executarAcao(acao) {
+            document.form1.acao.value = acao;
+            document.form1.submit();
+        }
+
+    </script>
+
+</body>
+
+

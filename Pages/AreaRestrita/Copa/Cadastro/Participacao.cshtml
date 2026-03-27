@@ -1,0 +1,283 @@
+﻿@page
+
+@{
+    ViewData["Title"] = "Participacao";
+}
+
+@functions {
+    public enum TipoJogador
+    {
+        Jogador = 'J',
+        Capitao = 'C',
+        Tecnico = 'T'
+    }
+    private class Participacao
+    {
+        public string IdParticipacao { get; set; }
+        public string Nome { get; set; }
+        public char Tipo { get; set; }
+        public string GolsMarcados { get; set; }
+        public string IdJogador { get; set; }
+        public string IdJogo { get; set; }
+        public string NomeTime { get; set; }
+        public string NomeTime1 { get; set; }
+        public string NomeTime2 { get; set; }
+        public string Placar1 { get; set; }
+        public string Placar2 { get; set; }
+
+    }
+
+    private class Jogo
+    {
+        public string IdJogo { get; set; }
+        public string NomeTime1 { get; set; }
+        public string NomeTime2 { get; set; }
+    }
+
+    string acao = null;
+    string idJogador = null;
+    string idJogo = null;
+
+    bool showJogo = false;
+    List<Jogo> jogos = null;
+    List<Botao> botoes = null;
+    List<Participacao> jogadoresSuspensos = null;
+
+    // Jogo atualmente selecionado. Utilizado para atualizar os placares.
+    Participacao jogoParticipacao = null;
+
+    List<Participacao> participacoes = null;
+
+    private string MontaJogador(Participacao jogador)
+    {
+        string nome = ((jogador.Tipo != (char)TipoJogador.Jogador) ? $"[{jogador.Tipo}] {jogador.Nome}" : jogador.Nome);
+
+        return nome;
+    }
+
+    private void AlimentaVariaveis()
+    {
+        if (HttpContext.Request.HasFormContentType)
+        {
+            acao = Util.ChecaNulo(Request.Form["acao"]);
+            idJogador = Util.ChecaNulo(Request.Form["idJogador"]);
+            idJogo = Util.ChecaNulo(Request.Form["idJogo"]);
+        }
+        botoes = new BotaoDao().GetAll();
+
+        showJogo = !string.IsNullOrEmpty(idJogo);
+    }
+
+    // Popula a tabela de participações e atribui o jogo que foi selecionado
+    private void ConsultarParticipacoes()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdJogo", idJogo);
+
+        participacoes = new Dao().ExecutarAcaoList<Participacao>("C", parametros);
+
+        if (!string.IsNullOrEmpty(idJogo))
+        {
+            jogoParticipacao = participacoes.First<Participacao>();
+        }
+    }
+
+    // Popula o select de jogos
+    private void ConsultarJogos()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 2);
+        parametros.Add("@IdJogo", idJogo);
+
+        jogos = new Dao().ExecutarAcaoList<Jogo>("C", parametros);
+    }
+
+    private void ConsultarJogadoresSuspensos()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@TipoConsulta", 3);
+        parametros.Add("@IdJogo", idJogo);
+
+        jogadoresSuspensos = new Dao().ExecutarAcaoList<Participacao>("C", parametros);
+    }
+
+    private void Manutencao()
+    {
+        Dictionary<string, object> parametros = new Dictionary<string, object>();
+        parametros.Add("@IdJogo", idJogo);
+        parametros.Add("@IdJogador", idJogador);
+
+        new Dao().ExecutarAcao(acao, parametros);
+    }
+}
+@{
+    AlimentaVariaveis();
+
+    // Nunca será feito insert ou delete por essa página
+    if (acao == "A")
+    {
+        Util.ExceptionHandler(() =>
+        {
+            Manutencao();
+            ModelState.AddModelError("alert-success", "Operação realizada com sucesso.");
+        }, this.ModelState);
+    }
+
+    Util.ExceptionHandler(() =>
+    {
+        ConsultarJogos();
+    }, this.ModelState);
+
+    if (!string.IsNullOrEmpty(idJogo))
+    {
+        Util.ExceptionHandler(() =>
+        {
+            ConsultarParticipacoes();
+            ConsultarJogadoresSuspensos();
+        }, this.ModelState);
+    }
+}
+@section head {
+    <link href="~/Scripts/Style.css" rel="stylesheet">
+}
+
+<body>
+    <form name="form1" method="post">
+        <input type="hidden" name="acao" id="acao" />
+        <input type="hidden" name="idJogador" id="idJogador" value="@idJogador" />
+
+        @*@RenderPage("~/AreaRestrita/Menu.cshtml")*@
+
+        <div class="container mt-5 pt-5">
+            <div class="d-flex justify-content-between mt-3 mb-5">
+                <p class="h1">Participação</p>
+            </div>
+
+            <div class="position-absolute alert fade show" style="top: 10px; right: 100px;" role="alert">
+                @await Html.PartialAsync("Shared/Helpers/_MakeAlert")
+            </div>
+
+            <div class="input-group mb-3">
+                <label class="input-group-text" for="idJogo">Jogo: </label> <br />
+                <select class="form-select" name="idJogo" onchange="this.form.submit()">
+                    <option value="">Selecione um jogo</option>
+
+                    @foreach (Jogo item in jogos)
+                    {
+                        <!option @(item.IdJogo == idJogo ? "selected" : "")
+                                value="@item.IdJogo">
+                            @item.NomeTime1 x @item.NomeTime2
+                        </!option>
+                    }
+                </select>
+                <button class="btn btn-outline-primary" type="submit" onclick="estadoInicial()">Limpar</button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(idJogo))
+            {
+                <div class="d-flex flex-column gap-2">
+                    <div>
+                        <p class="h4">@jogoParticipacao.NomeTime1 x @jogoParticipacao.NomeTime2 (#@idJogo)</p>
+                        <p>@jogoParticipacao.Placar1 x @jogoParticipacao.Placar2</p>
+                    </div>
+                    <div>
+                        @if (participacoes != null)
+                        {
+                            <div class="table-wrapper table-responsive">
+                                <table class="table table-striped table-hover table-borderless table-scroll">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Nome do Jogador</th>
+                                            <th>GolsMarcados</th>
+                                            @if (botoes.Any(x => x.Codigo == "A"))
+                                            {
+                                                <th>Ações</th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (Participacao item in participacoes)
+                                        {
+                                            <tr>
+                                                <td>@item.NomeTime</td>
+                                                <td>@MontaJogador(item)</td>
+                                                <td>@item.GolsMarcados</td>
+                                                @if (botoes.Any(x => x.Codigo == "A") && item.Tipo != (char)TipoJogador.Tecnico)
+                                                {
+                                                    <td><button class="btn btn-sm btn-primary js-setParticipacao" data-idJogo="@item.IdJogo" data-idJogador="@item.IdJogador">+1 Gol</button></td>
+                                                }
+                                                else
+                                                {
+                                                    <td></td>
+                                                }
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                    <div>
+                        @if (jogadoresSuspensos != null)
+                        {
+                            <p class="h3 my-5">Jogadores Suspensos</p>
+                            <div class="table-wrapper table-responsive w-50">
+                                <table class="table table-striped table-hover table-borderless table-scroll">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Nome do Jogador</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (Participacao item in jogadoresSuspensos)
+                                        {
+                                            <tr>
+                                                <td>@item.NomeTime</td>
+                                                <td><s class="text-danger">@MontaJogador(item)</s></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </form>
+    <script src="~/Scripts/Scripts.js"></script>
+    <script>
+        function executarAcao(acao) {
+            document.form1.acao.value = acao;
+            document.form1.submit();
+        }
+
+        function adicionaEventos() {
+            Array.from(document.querySelectorAll('.js-setParticipacao')).forEach(function (item) {
+                item.addEventListener("click", function () {
+                    var participacao = {
+                        idJogo: this.getAttribute("data-idJogo"),
+                        idJogador: this.getAttribute("data-idJogador")
+                    };
+                    setParticipacao(participacao);
+                });
+            });
+        }
+
+        function setParticipacao(participacao) {
+            document.form1.idJogo.value = participacao.idJogo;
+            document.form1.idJogador.value = participacao.idJogador;
+
+            executarAcao('A');
+        }
+
+
+        adicionaEventos();
+    </script>
+
+</body>
+
+
