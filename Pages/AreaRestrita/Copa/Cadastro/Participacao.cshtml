@@ -137,9 +137,6 @@
         }, this.ModelState);
     }
 }
-@section head {
-    <link href="~/Scripts/Style.css" rel="stylesheet">
-}
 
 <body>
     <form name="form1" method="post">
@@ -248,7 +245,7 @@
             }
         </div>
     </form>
-    <script src="~/Scripts/Scripts.js"></script>
+@section scripts {
     <script>
         function executarAcao(acao) {
             document.form1.acao.value = acao;
@@ -277,6 +274,7 @@
 
         adicionaEventos();
     </script>
+}
 
 </body>
 

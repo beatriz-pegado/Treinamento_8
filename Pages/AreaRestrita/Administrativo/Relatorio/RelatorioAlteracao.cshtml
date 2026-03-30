@@ -155,16 +155,13 @@
 
             <div id="tabelaAlteracoes"></div>
         </div>
-
-        </div>
     </form>
-
-    <script src="~/Scripts/Scripts.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     @{
         var alteracoesSeguro = alteracoes != null ? alteracoes : "[]";
     }
+    @section scripts {
+
     <script>
              window.onload = function () {
             try {
@@ -277,10 +274,8 @@
                 return tbody;
             }
 
-
-
-
     </script>
+    }
 </body>
 
 

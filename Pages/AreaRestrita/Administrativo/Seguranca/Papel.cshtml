@@ -3,10 +3,6 @@
     ViewData["Title"] = "Papel";
 }
 
-@section head {
-    <link rel="stylesheet" href="~/Scripts/Style.css" />
-}
-
 @functions{
 
     private enum View
@@ -332,82 +328,80 @@
         }
     </div>
     </form>
-
-    <script src="~/Scripts/Scripts.js"></script>
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script>
-        function setId(idPapel) {
-            document.form1.view.value = "@((int)View.Edit)";
-            document.form1.idPapel.value = idPapel;
-            executarAcao('C');
-        }
-
-        function novo() {
-            document.form1.view.value = "@((int)View.New)";
-            executarAcao('C');
-        }
-
-        function adicionaEventos() {
-            Array.from(document.querySelectorAll('.js-setId')).forEach(function (item) {
-                item.addEventListener("click", function () {
-                    var id = this.getAttribute("data-id");
-                    setId(id);
-                });
-            });
-
-
-            // Adiciona debounce na pesquisa de registros
-            document.form1.pesquisa.addEventListener('keyup', debounce(() => {
-                consultarItens();
-            }, 300));
-        }
-
-        function consultarItens() {
-            var resultado = document.querySelector('.resultado');
-
-            resultado.innerHTML = '';
-
-            // Se foi feita alguma pesquisa
-            let pesquisa = document.form1.pesquisa.value;
-
-            // Envia dados para a AuxPaginacao para que seja feita a consulta
-            $.ajax({
-                type: "POST",
-                url: "/AreaRestrita/AuxPapel",
-                headers: {
-                    "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
-                },
-                data: {
-                    pesquisa: pesquisa
-                },
-                success: function (res) {
-                    resultado.innerHTML = res;
-                    adicionaEventos();
-                },
-                error: function (xhr) {
-                    body.innerHTML = xhr.responseText;
-                },
-                finally: function () {
-                    body.remove(div);
-                }
-            });
-        }
-
-        // Define tempo de delay ao pesquisar
-        function debounce(callback, delay) {
-            let timeout;
-            return function () {
-                clearTimeout(timeout);
-                timeout = setTimeout(callback, delay);
+@section scripts {
+        <script>
+            function setId(idPapel) {
+                document.form1.view.value = "@((int)View.Edit)";
+                document.form1.idPapel.value = idPapel;
+                executarAcao('C');
             }
-        }
 
-        function init() {
-            adicionaEventos();
-            consultarItens();
-        }
+            function novo() {
+                document.form1.view.value = "@((int)View.New)";
+                executarAcao('C');
+            }
 
-        init();
-    </script>
+            function adicionaEventos() {
+                Array.from(document.querySelectorAll('.js-setId')).forEach(function (item) {
+                    item.addEventListener("click", function () {
+                        var id = this.getAttribute("data-id");
+                        setId(id);
+                    });
+                });
+
+
+                // Adiciona debounce na pesquisa de registros
+                document.form1.pesquisa.addEventListener('keyup', debounce(() => {
+                    consultarItens();
+                }, 300));
+            }
+
+            function consultarItens() {
+                var resultado = document.querySelector('.resultado');
+
+                resultado.innerHTML = '';
+
+                // Se foi feita alguma pesquisa
+                let pesquisa = document.form1.pesquisa.value;
+
+                // Envia dados para a AuxPaginacao para que seja feita a consulta
+                $.ajax({
+                    type: "POST",
+                    url: "/AreaRestrita/AuxPapel",
+                    headers: {
+                        "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
+                    },
+                    data: {
+                        pesquisa: pesquisa
+                    },
+                    success: function (res) {
+                        resultado.innerHTML = res;
+                        adicionaEventos();
+                    },
+                    error: function (xhr) {
+                        body.innerHTML = xhr.responseText;
+                    },
+                    finally: function () {
+                        body.remove(div);
+                    }
+                });
+            }
+
+            // Define tempo de delay ao pesquisar
+            function debounce(callback, delay) {
+                let timeout;
+                return function () {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(callback, delay);
+                }
+            }
+
+            function init() {
+                adicionaEventos();
+                consultarItens();
+            }
+
+            init();
+        </script>
+}
 </body>

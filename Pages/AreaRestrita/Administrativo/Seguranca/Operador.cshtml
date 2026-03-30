@@ -364,85 +364,85 @@
         </div>
     </form>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    @section scripts {
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 
 
-    <script src="~/Scripts/Scripts.js"></script>
+        <script>
+            function setId(idOperador) {
+                document.form1.view.value = "@((int)View.Edit)";
+                document.form1.idOperador.value = idOperador;
+                executarAcao('C');
+            }
 
-    <script>
-        function setId(idOperador) {
-            document.form1.view.value = "@((int)View.Edit)";
-            document.form1.idOperador.value = idOperador;
-            executarAcao('C');
-        }
+            function novo() {
+                document.form1.view.value = "@((int)View.New)";
+                executarAcao('');
+            }
 
-        function novo() {
-            document.form1.view.value = "@((int)View.New)";
-            executarAcao('');
-        }
-
-        function adicionaEventos() {
-            Array.from(document.querySelectorAll('.js-setId')).forEach(function (item) {
-                item.addEventListener("click", function () {
-                    var id = this.getAttribute("data-id");
-                    setId(id);
-                });
-            });
-
-            $("#papel").autocomplete({
-                minLength: 2,
-                source: function (request, response) {
-                    $.ajax({
-                        method: "POST",
-                        url: "Operador",
-                        headers: {
-                            "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
-                        },
-                        data: { acao: "BP", termo: request.term },
-                        dataType: "json"
-                    }).done(function (data) {
-                        response(data);
-                    }).fail(function () {
-                        response([]);
+            function adicionaEventos() {
+                Array.from(document.querySelectorAll('.js-setId')).forEach(function (item) {
+                    item.addEventListener("click", function () {
+                        var id = this.getAttribute("data-id");
+                        setId(id);
                     });
-                },
-                select: function (event, ui) {
-                    $("#idPapel").val(ui.item.id);
-                }
-            });
-        }
-
-        function gerarSenha() {
-            $.ajax({
-                method: "POST",
-                url: "Operador",
-                headers: {
-                    "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
-                },
-                data: { acao: "GS" }
-            }).done(function (res) {
-                    document.form1.senha.value = res
                 });
-        }
 
-        function buscarCep() {
-            var cep = document.getElementById("cep").value;
+                $("#papel").autocomplete({
+                    minLength: 2,
+                    source: function (request, response) {
+                        $.ajax({
+                            method: "POST",
+                            url: "Operador",
+                            headers: {
+                                "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
+                            },
+                            data: { acao: "BP", termo: request.term },
+                            dataType: "json"
+                        }).done(function (data) {
+                            response(data);
+                        }).fail(function () {
+                            response([]);
+                        });
+                    },
+                    select: function (event, ui) {
+                        $("#idPapel").val(ui.item.id);
+                    }
+                });
+            }
 
-            $.ajax({
-                method: "GET",
-                url: `https://viacep.com.br/ws/${cep}/json`,
-                datatype: 'JSON'
-            }).done(function (res) {
-                document.getElementById("estado").value = res.uf || "";
-                document.getElementById("cidade").value = res.localidade || "";
-                document.getElementById("bairro").value = res.bairro || "";
-            });
-        }
+            function gerarSenha() {
+                $.ajax({
+                    method: "POST",
+                    url: "Operador",
+                    headers: {
+                        "RequestVerificationToken": $('input:hidden[name="__RequestVerificationToken"]').val()
+                    },
+                    data: { acao: "GS" }
+                }).done(function (res) {
+                        document.form1.senha.value = res
+                    });
+            }
 
-        adicionaEventos();
-    </script>
+            function buscarCep() {
+                var cep = document.getElementById("cep").value;
+
+                $.ajax({
+                    method: "GET",
+                    url: `https://viacep.com.br/ws/${cep}/json`,
+                    datatype: 'JSON'
+                }).done(function (res) {
+                    document.getElementById("estado").value = res.uf || "";
+                    document.getElementById("cidade").value = res.localidade || "";
+                    document.getElementById("bairro").value = res.bairro || "";
+                });
+            }
+
+            adicionaEventos();
+        </script>
+    }
 
 </body>
 

@@ -33,26 +33,6 @@
         }
     }
 
-    //private void Consultar()
-    //{
-    //    Dictionary<string, object> parametros = new Dictionary<string, object>();
-    //    parametros.Add("@Cpf", cpf);
-    //    parametros.Add("@Senha", senha);
-    //
-    //    List<Operador> operadores = new Dao().ExecutarProcedureList<Operador>("stp_ABP_AbreSessao", parametros);
-    //
-    //    if (operadores != null)
-    //    {
-    //        Operador operador = operadores.FirstOrDefault();
-    //        if (operador != null)
-    //        {
-    //            Session["IdOperador"] = operador.IdOperador;
-    //            Session["Tema"] = operador.Theme;
-    //            redirect = true;
-    //        }
-    //    }
-    //}
-
     private void AbreSessao()
     {
         string? origem = HttpContext.Connection.RemoteIpAddress?.ToString();

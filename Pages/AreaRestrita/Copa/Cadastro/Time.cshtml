@@ -100,8 +100,6 @@
         }, this.ModelState);
     }
 
-    // Como só usaremos a função Consultar, que não tem parâmetros, podemos simplificar da seguinte forma:
-    // Util.ExceptionHandler(Consultar, this.ModelState);
     Util.ExceptionHandler(() =>
     {
         Consultar();

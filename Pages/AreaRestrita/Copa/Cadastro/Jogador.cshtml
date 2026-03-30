@@ -198,9 +198,6 @@
         jogador = new Jogador();
     }
 }
-@section head {
-    <link href="~/Scripts/Style.css" rel="stylesheet">
-}
 <body>
     <form name="form1" method="post">
         <input type="hidden" name="acao" id="acao" />
@@ -411,7 +408,7 @@
             }
         </div>
     </form>
-    <script src="~/Scripts/Scripts.js"></script>
+@section scripts {
     <script>
         function novo(){
             document.form1.view.value = "@((int)View.New)";
@@ -439,6 +436,7 @@
         }
         adicionaEventos();
     </script>
+}
 
 </body>
 
